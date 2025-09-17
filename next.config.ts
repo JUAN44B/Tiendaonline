@@ -33,6 +33,12 @@ const nextConfig: NextConfig = {
         hostname: 'api.qrserver.com',
         port: '',
         pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'barcode.tec-it.com',
+        port: '',
+        pathname: '/**',
       }
     ],
   },

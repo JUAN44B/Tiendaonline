@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { MoreHorizontal } from 'lucide-react';
+import { MoreHorizontal, Printer } from 'lucide-react';
 
 import { fetchProducts, fetchCategories } from '@/lib/data';
 import {
@@ -17,6 +17,7 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Badge } from '../ui/badge';
@@ -81,6 +82,10 @@ export default async function ProductsTable() {
                   <DropdownMenuItem asChild>
                     <Link href={`/products/${product.id}/edit`}>Edit</Link>
                   </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href={`/products/${product.id}/barcode`}>Print Label</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
                   <form action={deleteProductAction.bind(null, product.id)}>
                     <button type="submit" className="w-full text-left relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 text-destructive">
                       Delete
