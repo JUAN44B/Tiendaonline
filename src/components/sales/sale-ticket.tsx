@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { Sale, Customer } from "@/lib/definitions";
@@ -7,7 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Printer } from "lucide-react";
 import Image from "next/image";
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useReactToPrint } from "react-to-print";
 import Link from "next/link";
 
@@ -19,6 +20,14 @@ interface SaleTicketProps {
 
 export default function SaleTicket({ sale, customer, productMap }: SaleTicketProps) {
     const componentRef = useRef(null);
+    const [qrCodeUrl, setQrCodeUrl] = useState('');
+
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const currentUrl = window.location.href;
+            setQrCodeUrl(`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(currentUrl)}`);
+        }
+    }, []);
 
     const handlePrint = useReactToPrint({
         content: () => componentRef.current,
@@ -109,14 +118,16 @@ export default function SaleTicket({ sale, customer, productMap }: SaleTicketPro
                     </div>
                 </CardContent>
                 <CardFooter className="flex-col items-center p-4">
-                     <Image
-                        src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=https://example.com"
-                        alt="QR Code"
-                        width={80}
-                        height={80}
-                        className="mb-2"
-                        data-ai-hint="qr code"
-                    />
+                     {qrCodeUrl && (
+                        <Image
+                            src={qrCodeUrl}
+                            alt="QR Code"
+                            width={80}
+                            height={80}
+                            className="mb-2"
+                            data-ai-hint="qr code"
+                        />
+                     )}
                     <p className="text-xs text-center">¡Gracias por su compra!</p>
                 </CardFooter>
             </Card>
