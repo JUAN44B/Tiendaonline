@@ -70,6 +70,7 @@ export default function PosInterface({ initialProducts, customers }: PosInterfac
     const item = cart.find(i => i.product.id === productId);
     if(item && newQuantity > item.product.stock) {
         toast({ title: "Stock limit reached", variant: "destructive"})
+        setQuantityInput(item.product.stock.toString());
         return;
     }
 
@@ -90,17 +91,35 @@ export default function PosInterface({ initialProducts, customers }: PosInterfac
         )
       );
     }
-    setQuantityInput('');
   }, [cart, toast]);
 
   useEffect(() => {
     if (quantityInput && selectedCartItemId) {
       const newQuantity = parseInt(quantityInput, 10);
-      if (!isNaN(newQuantity) && newQuantity > 0) {
-        updateQuantity(selectedCartItemId, newQuantity);
+      if (!isNaN(newQuantity)) {
+          const item = cart.find(i => i.product.id === selectedCartItemId);
+          if(item && newQuantity > item.product.stock) {
+              toast({ title: "Stock limit reached", variant: "destructive"})
+              setCart(prevCart => prevCart.map(i => i.product.id === selectedCartItemId ? {...i, quantity: item.product.stock} : i));
+          } else {
+               updateQuantity(selectedCartItemId, newQuantity);
+          }
       }
     }
-  }, [quantityInput, selectedCartItemId, updateQuantity]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [quantityInput]);
+
+  useEffect(() => {
+    if (selectedCartItemId) {
+        const selectedItem = cart.find(item => item.product.id === selectedCartItemId);
+        if (selectedItem) {
+            setQuantityInput(selectedItem.quantity.toString());
+        }
+    } else {
+        setQuantityInput('');
+    }
+  }, [selectedCartItemId, cart]);
+
 
   const cartSubtotal = useMemo(() => {
     return cart.reduce((total, item) => total + item.product.price * item.quantity, 0);
@@ -143,7 +162,7 @@ export default function PosInterface({ initialProducts, customers }: PosInterfac
                   description: `Invoice ${result.sale.invoiceNumber} created.`
               });
               handleClearSale();
-              router.push('/sales');
+              router.push(`/sales/${result.sale.id}/ticket`);
           } else {
               toast({ title: 'Error', description: result.error, variant: 'destructive'})
           }
@@ -162,10 +181,23 @@ export default function PosInterface({ initialProducts, customers }: PosInterfac
         toast({ title: 'Seleccione un producto del carrito primero', variant: 'destructive'});
         return;
     }
-    if (value === 'C') {
+     if (value === 'C') {
         setQuantityInput('');
+    } else if (value === 'del') {
+        setQuantityInput(prev => prev.slice(0, -1));
     } else {
-        setQuantityInput(prev => prev + value);
+        setQuantityInput(prev => {
+            const newValue = prev + value;
+            const newQuantity = parseInt(newValue, 10);
+            if (!isNaN(newQuantity)) {
+                const item = cart.find(i => i.product.id === selectedCartItemId);
+                if (item && newQuantity > item.product.stock) {
+                    toast({ title: "Stock limit reached", variant: "destructive" });
+                    return item.product.stock.toString();
+                }
+            }
+            return newValue;
+        });
     }
   };
 
@@ -242,7 +274,10 @@ export default function PosInterface({ initialProducts, customers }: PosInterfac
                     {cart.map((item) => (
                       <li key={item.product.id} 
                           className={cn("flex items-center gap-4 p-2 rounded-md cursor-pointer", selectedCartItemId === item.product.id ? 'bg-accent' : '')}
-                          onClick={() => setSelectedCartItemId(item.product.id)}
+                          onClick={() => {
+                            setSelectedCartItemId(item.product.id);
+                            setQuantityInput(item.quantity.toString());
+                          }}
                       >
                         <Image
                           src={item.product.imageUrl}
@@ -278,9 +313,9 @@ export default function PosInterface({ initialProducts, customers }: PosInterfac
                     <div className="flex justify-between font-bold text-base"><span>Total</span><span className='text-xl'>{formatCurrency(cartTotal)}</span></div>
                 </div>
                  <div className="grid grid-cols-3 gap-2">
-                    {['1', '2', '3', '4', '5', '6', '7', '8', '9', 'C', '0'].map((key) => (
+                    {['1', '2', '3', '4', '5', '6', '7', '8', '9', 'C', '0', 'del'].map((key) => (
                         <Button key={key} variant="outline" className="h-10 text-lg" onClick={() => handleNumpadClick(key)}>
-                            {key}
+                            {key === 'del' ? <X className="h-5 w-5"/> : key}
                         </Button>
                     ))}
                      <Button variant="destructive" className="h-10 text-lg col-span-3" onClick={handleClearSale}>
@@ -299,4 +334,3 @@ export default function PosInterface({ initialProducts, customers }: PosInterfac
     </div>
   );
 }
-

@@ -111,6 +111,7 @@ export const deleteCategory = async (id: string) => { await delay(200); categori
 
 // Customers
 export const fetchCustomers = async () => { await delay(100); return [...customers]; };
+export const fetchCustomerById = async (id: string) => { await delay(50); return customers.find(c => c.id === id); };
 export const saveCustomer = async (customer: Omit<Customer, 'id'> & { id?: string }) => {
   await delay(200);
   if (customer.id) {
@@ -126,6 +127,7 @@ export const deleteCustomer = async (id: string) => { await delay(200); customer
 
 // Sales
 export const fetchSales = async () => { await delay(100); return [...sales].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()); };
+export const fetchSaleById = async (id: string) => { await delay(50); return sales.find(s => s.id === id); };
 export const saveSale = async (sale: Omit<Sale, 'id' | 'invoiceNumber'>) => {
     await delay(300);
     const lastInvoiceNumber = sales.reduce((max, s) => {
