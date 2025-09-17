@@ -1,3 +1,52 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "1",
+      "description": "A stylish, ergonomic office chair.",
+      "imageUrl": "https://picsum.photos/seed/swiftpos-chair/600/400",
+      "imageHint": "office chair"
+    },
+    {
+      "id": "2",
+      "description": "A modern, minimalist wooden desk.",
+      "imageUrl": "https://picsum.photos/seed/swiftpos-desk/600/400",
+      "imageHint": "wooden desk"
+    },
+    {
+      "id": "3",
+      "description": "A sleek, powerful laptop for professionals.",
+      "imageUrl": "https://picsum.photos/seed/swiftpos-laptop/600/400",
+      "imageHint": "laptop"
+    },
+    {
+      "id": "4",
+      "description": "A high-resolution 27-inch computer monitor.",
+      "imageUrl": "https://picsum.photos/seed/swiftpos-monitor/600/400",
+      "imageHint": "computer monitor"
+    },
+    {
+      "id": "5",
+      "description": "A comfortable, mechanical keyboard with RGB lighting.",
+      "imageUrl": "https://picsum.photos/seed/swiftpos-keyboard/600/400",
+      "imageHint": "mechanical keyboard"
+    },
+    {
+      "id": "6",
+      "description": "A wireless, ergonomic mouse.",
+      "imageUrl": "https://picsum.photos/seed/swiftpos-mouse/600/400",
+      "imageHint": "wireless mouse"
+    },
+    {
+      "id": "7",
+      "description": "Noise-cancelling over-ear headphones.",
+      "imageUrl": "https://picsum.photos/seed/swiftpos-headphones/600/400",
+      "imageHint": "headphones"
+    },
+    {
+      "id": "8",
+      "description": "A stylish desk lamp with adjustable brightness.",
+      "imageUrl": "https://picsum.photos/seed/swiftpos-lamp/600/400",
+      "imageHint": "desk lamp"
+    }
+  ]
 }
