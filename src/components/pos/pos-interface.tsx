@@ -47,23 +47,22 @@ export default function PosInterface({ initialProducts, customers }: PosInterfac
   }, [searchTerm, initialProducts]);
   
   const addToCart = (product: Product) => {
-    setCart((prevCart) => {
-      const existingItem = prevCart.find((item) => item.product.id === product.id);
-      if (existingItem) {
-        if (existingItem.quantity < product.stock) {
-            const updatedCart = prevCart.map((item) =>
-              item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
-            );
-            setSelectedCartItemId(product.id);
-            return updatedCart;
-        }
-        toast({ title: "Límite de stock alcanzado", variant: "destructive"})
-        return prevCart;
+    const existingItem = cart.find((item) => item.product.id === product.id);
+    if (existingItem) {
+      if (existingItem.quantity < product.stock) {
+        const updatedCart = cart.map((item) =>
+          item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
+        );
+        setCart(updatedCart);
+        setSelectedCartItemId(product.id);
+      } else {
+        toast({ title: "Límite de stock alcanzado", variant: "destructive"});
       }
-      const newCart = [...prevCart, { product, quantity: 1 }];
+    } else {
+      const newCart = [...cart, { product, quantity: 1 }];
+      setCart(newCart);
       setSelectedCartItemId(product.id);
-      return newCart;
-    });
+    }
   };
 
   const updateQuantity = useCallback((productId: string, newQuantity: number) => {
