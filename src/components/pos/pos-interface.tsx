@@ -1,8 +1,9 @@
+
 'use client';
 
-import { useState, useMemo, useTransition } from 'react';
+import { useState, useMemo, useTransition, useCallback, useEffect } from 'react';
 import Image from 'next/image';
-import { Search, X, Plus, Minus, Loader2 } from 'lucide-react';
+import { Search, X, Plus, Minus, Loader2, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 import type { Product, Customer } from '@/lib/definitions';
@@ -14,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator';
 import { createSaleAction } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 type CartItem = {
   product: Product;
@@ -30,6 +32,9 @@ export default function PosInterface({ initialProducts, customers }: PosInterfac
   const [cart, setCart] = useState<CartItem[]>([]);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | undefined>(undefined);
   const [isPending, startTransition] = useTransition();
+  const [selectedCartItemId, setSelectedCartItemId] = useState<string | null>(null);
+  const [quantityInput, setQuantityInput] = useState('');
+  
   const { toast } = useToast();
   const router = useRouter();
 
@@ -46,18 +51,22 @@ export default function PosInterface({ initialProducts, customers }: PosInterfac
       const existingItem = prevCart.find((item) => item.product.id === product.id);
       if (existingItem) {
         if (existingItem.quantity < product.stock) {
-            return prevCart.map((item) =>
+            const updatedCart = prevCart.map((item) =>
               item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
             );
+            setSelectedCartItemId(product.id);
+            return updatedCart;
         }
         toast({ title: "Stock limit reached", variant: "destructive"})
         return prevCart;
       }
-      return [...prevCart, { product, quantity: 1 }];
+      const newCart = [...prevCart, { product, quantity: 1 }];
+      setSelectedCartItemId(product.id);
+      return newCart;
     });
   };
 
-  const updateQuantity = (productId: string, newQuantity: number) => {
+  const updateQuantity = useCallback((productId: string, newQuantity: number) => {
     const item = cart.find(i => i.product.id === productId);
     if(item && newQuantity > item.product.stock) {
         toast({ title: "Stock limit reached", variant: "destructive"})
@@ -65,7 +74,15 @@ export default function PosInterface({ initialProducts, customers }: PosInterfac
     }
 
     if (newQuantity <= 0) {
-      setCart((prevCart) => prevCart.filter((item) => item.product.id !== productId));
+      setCart((prevCart) => {
+        const newCart = prevCart.filter((item) => item.product.id !== productId);
+        if (newCart.length > 0) {
+          setSelectedCartItemId(newCart[newCart.length - 1].product.id);
+        } else {
+          setSelectedCartItemId(null);
+        }
+        return newCart;
+      });
     } else {
       setCart((prevCart) =>
         prevCart.map((item) =>
@@ -73,7 +90,17 @@ export default function PosInterface({ initialProducts, customers }: PosInterfac
         )
       );
     }
-  };
+    setQuantityInput('');
+  }, [cart, toast]);
+
+  useEffect(() => {
+    if (quantityInput && selectedCartItemId) {
+      const newQuantity = parseInt(quantityInput, 10);
+      if (!isNaN(newQuantity) && newQuantity > 0) {
+        updateQuantity(selectedCartItemId, newQuantity);
+      }
+    }
+  }, [quantityInput, selectedCartItemId, updateQuantity]);
 
   const cartSubtotal = useMemo(() => {
     return cart.reduce((total, item) => total + item.product.price * item.quantity, 0);
@@ -115,13 +142,31 @@ export default function PosInterface({ initialProducts, customers }: PosInterfac
                   title: 'Sale Completed!',
                   description: `Invoice ${result.sale.invoiceNumber} created.`
               });
-              setCart([]);
-              setSelectedCustomerId(undefined);
+              handleClearSale();
               router.push('/sales');
           } else {
               toast({ title: 'Error', description: result.error, variant: 'destructive'})
           }
       });
+  };
+
+  const handleClearSale = () => {
+    setCart([]);
+    setSelectedCustomerId(undefined);
+    setSelectedCartItemId(null);
+    setQuantityInput('');
+  };
+
+  const handleNumpadClick = (value: string) => {
+    if (!selectedCartItemId) {
+        toast({ title: 'Seleccione un producto del carrito primero', variant: 'destructive'});
+        return;
+    }
+    if (value === 'C') {
+        setQuantityInput('');
+    } else {
+        setQuantityInput(prev => prev + value);
+    }
   };
 
   return (
@@ -172,11 +217,11 @@ export default function PosInterface({ initialProducts, customers }: PosInterfac
       <div className="h-full flex flex-col">
         <Card className="flex-1 flex flex-col">
           <CardContent className="p-4 flex-1 flex flex-col">
-            <h2 className="text-lg font-semibold mb-4">Current Sale</h2>
+            <h2 className="text-lg font-semibold mb-4">Venta Actual</h2>
             <div className="mb-4">
                 <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
                     <SelectTrigger>
-                        <SelectValue placeholder="Select a customer" />
+                        <SelectValue placeholder="Seleccionar un cliente" />
                     </SelectTrigger>
                     <SelectContent>
                         {customers.map((customer) => (
@@ -191,11 +236,14 @@ export default function PosInterface({ initialProducts, customers }: PosInterfac
             <ScrollArea className="flex-1 -mx-4">
               <div className="px-4">
                 {cart.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-10">Cart is empty</p>
+                  <p className="text-center text-muted-foreground py-10">El carrito esta vacío</p>
                 ) : (
-                  <ul className="space-y-4">
+                  <ul className="space-y-1">
                     {cart.map((item) => (
-                      <li key={item.product.id} className="flex items-center gap-4">
+                      <li key={item.product.id} 
+                          className={cn("flex items-center gap-4 p-2 rounded-md cursor-pointer", selectedCartItemId === item.product.id ? 'bg-accent' : '')}
+                          onClick={() => setSelectedCartItemId(item.product.id)}
+                      >
                         <Image
                           src={item.product.imageUrl}
                           alt={item.product.name}
@@ -206,13 +254,14 @@ export default function PosInterface({ initialProducts, customers }: PosInterfac
                         />
                         <div className="flex-1">
                           <p className="font-semibold text-sm">{item.product.name}</p>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Button size="icon" variant="outline" className="h-6 w-6" onClick={() => updateQuantity(item.product.id, item.quantity - 1)}><Minus className="h-3 w-3"/></Button>
-                            <span>{item.quantity}</span>
-                            <Button size="icon" variant="outline" className="h-6 w-6" onClick={() => updateQuantity(item.product.id, item.quantity + 1)}><Plus className="h-3 w-3"/></Button>
-                          </div>
+                           <p className="text-xs text-muted-foreground">{formatCurrency(item.product.price)}</p>
                         </div>
-                        <p className="font-medium text-sm">{formatCurrency(item.product.price * item.quantity)}</p>
+                        <div className="flex items-center gap-2">
+                           <Button size="icon" variant="outline" className="h-6 w-6" onClick={(e) => { e.stopPropagation(); updateQuantity(item.product.id, item.quantity - 1); }}><Minus className="h-3 w-3"/></Button>
+                           <span className="w-6 text-center">{item.quantity}</span>
+                           <Button size="icon" variant="outline" className="h-6 w-6" onClick={(e) => { e.stopPropagation(); updateQuantity(item.product.id, item.quantity + 1); }}><Plus className="h-3 w-3"/></Button>
+                        </div>
+                        <p className="font-medium text-sm w-20 text-right">{formatCurrency(item.product.price * item.quantity)}</p>
                       </li>
                     ))}
                   </ul>
@@ -222,14 +271,27 @@ export default function PosInterface({ initialProducts, customers }: PosInterfac
 
             <Separator className="my-4" />
             
-            <div className="space-y-2 text-sm">
-                <div className="flex justify-between"><span>Subtotal</span><span>{formatCurrency(cartSubtotal)}</span></div>
-                <div className="flex justify-between"><span>Tax (8%)</span><span>{formatCurrency(cartTax)}</span></div>
-                <div className="flex justify-between font-bold text-base"><span>Total</span><span>{formatCurrency(cartTotal)}</span></div>
+            <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2 text-sm">
+                    <div className="flex justify-between"><span>Subtotal</span><span>{formatCurrency(cartSubtotal)}</span></div>
+                    <div className="flex justify-between"><span>Impuestos (8%)</span><span>{formatCurrency(cartTax)}</span></div>
+                    <div className="flex justify-between font-bold text-base"><span>Total</span><span className='text-xl'>{formatCurrency(cartTotal)}</span></div>
+                </div>
+                 <div className="grid grid-cols-3 gap-2">
+                    {['1', '2', '3', '4', '5', '6', '7', '8', '9', 'C', '0'].map((key) => (
+                        <Button key={key} variant="outline" className="h-10 text-lg" onClick={() => handleNumpadClick(key)}>
+                            {key}
+                        </Button>
+                    ))}
+                     <Button variant="destructive" className="h-10 text-lg col-span-3" onClick={handleClearSale}>
+                        <Trash2 className="mr-2 h-4 w-4" /> Cancelar
+                    </Button>
+                </div>
             </div>
-            <Button className="w-full mt-6" size="lg" onClick={handleCompleteSale} disabled={isPending}>
+
+            <Button className="w-full mt-4" size="lg" onClick={handleCompleteSale} disabled={isPending}>
                 {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
-                Complete Sale
+                Completar Venta
             </Button>
           </CardContent>
         </Card>
@@ -237,3 +299,4 @@ export default function PosInterface({ initialProducts, customers }: PosInterfac
     </div>
   );
 }
+
