@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { fetchSales, fetchCustomers } from '@/lib/data';
 import {
   Table,
@@ -7,6 +8,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { ReceiptText } from 'lucide-react';
 
 export default async function SalesTable() {
   const [sales, customers] = await Promise.all([fetchSales(), fetchCustomers()]);
@@ -35,6 +38,9 @@ export default async function SalesTable() {
           <TableHead>Customer</TableHead>
           <TableHead>Date</TableHead>
           <TableHead className="text-right">Total</TableHead>
+          <TableHead>
+            <span className="sr-only">Actions</span>
+          </TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -44,6 +50,14 @@ export default async function SalesTable() {
             <TableCell>{customerMap.get(sale.customerId) || 'N/A'}</TableCell>
             <TableCell>{formatDate(sale.date)}</TableCell>
             <TableCell className="text-right">{formatCurrency(sale.total)}</TableCell>
+            <TableCell className="text-right">
+              <Button asChild variant="ghost" size="icon">
+                <Link href={`/sales/${sale.id}/ticket`}>
+                  <ReceiptText className="h-4 w-4" />
+                  <span className="sr-only">View Ticket</span>
+                </Link>
+              </Button>
+            </TableCell>
           </TableRow>
         ))}
       </TableBody>
