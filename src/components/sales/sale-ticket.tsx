@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/componen
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
-import { Printer } from "lucide-react";
+import { Printer, Store } from "lucide-react";
 import Image from "next/image";
 import { useRef, useState, useEffect } from "react";
 import { useReactToPrint } from "react-to-print";
@@ -35,14 +35,14 @@ export default function SaleTicket({ sale, customer, productMap }: SaleTicketPro
     });
 
     const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat('en-US', {
+        return new Intl.NumberFormat('es-US', {
             style: 'currency',
             currency: 'USD',
         }).format(amount);
     };
 
     const formatDate = (dateString: string) => {
-        return new Date(dateString).toLocaleString('en-US', {
+        return new Date(dateString).toLocaleString('es-ES', {
             year: 'numeric',
             month: 'long',
             day: 'numeric',
@@ -68,7 +68,10 @@ export default function SaleTicket({ sale, customer, productMap }: SaleTicketPro
         <div ref={componentRef} className="p-2">
             <Card className="font-mono text-sm mx-auto w-[320px] shadow-none border-none bg-white text-black">
                 <CardHeader className="text-center p-4">
-                    <CardTitle className="text-lg font-bold">SwiftPOS</CardTitle>
+                    <div className="flex justify-center items-center gap-2 mb-2">
+                        <Store className="h-8 w-8 text-primary" />
+                        <CardTitle className="text-xl font-bold">SwiftPOS</CardTitle>
+                    </div>
                     <p className="text-xs">123 Market St, San Francisco, CA</p>
                     <p className="text-xs">Tel: (123) 456-7890</p>
                 </CardHeader>

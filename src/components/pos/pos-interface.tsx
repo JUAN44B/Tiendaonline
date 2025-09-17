@@ -57,7 +57,7 @@ export default function PosInterface({ initialProducts, customers }: PosInterfac
             setSelectedCartItemId(product.id);
             return updatedCart;
         }
-        toast({ title: "Stock limit reached", variant: "destructive"})
+        toast({ title: "Límite de stock alcanzado", variant: "destructive"})
         return prevCart;
       }
       const newCart = [...prevCart, { product, quantity: 1 }];
@@ -69,7 +69,7 @@ export default function PosInterface({ initialProducts, customers }: PosInterfac
   const updateQuantity = useCallback((productId: string, newQuantity: number) => {
     const item = cart.find(i => i.product.id === productId);
     if(item && newQuantity > item.product.stock) {
-        toast({ title: "Stock limit reached", variant: "destructive"})
+        toast({ title: "Límite de stock alcanzado", variant: "destructive"})
         setQuantityInput(item.product.stock.toString());
         return;
     }
@@ -99,7 +99,7 @@ export default function PosInterface({ initialProducts, customers }: PosInterfac
       if (!isNaN(newQuantity)) {
           const item = cart.find(i => i.product.id === selectedCartItemId);
           if(item && newQuantity > item.product.stock) {
-              toast({ title: "Stock limit reached", variant: "destructive"})
+              toast({ title: "Límite de stock alcanzado", variant: "destructive"})
               setCart(prevCart => prevCart.map(i => i.product.id === selectedCartItemId ? {...i, quantity: item.product.stock} : i));
           } else {
                updateQuantity(selectedCartItemId, newQuantity);
@@ -129,16 +129,16 @@ export default function PosInterface({ initialProducts, customers }: PosInterfac
   const cartTotal = cartSubtotal + cartTax;
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
+    return new Intl.NumberFormat('es-US', { style: 'currency', currency: 'USD' }).format(amount);
   };
   
   const handleCompleteSale = () => {
       if (!selectedCustomerId) {
-          toast({ title: 'Please select a customer.', variant: 'destructive'});
+          toast({ title: 'Por favor, seleccione un cliente.', variant: 'destructive'});
           return;
       }
       if (cart.length === 0) {
-          toast({ title: 'Cart is empty.', variant: 'destructive'});
+          toast({ title: 'El carrito está vacío.', variant: 'destructive'});
           return;
       }
       
@@ -158,8 +158,8 @@ export default function PosInterface({ initialProducts, customers }: PosInterfac
 
           if(result.success && result.sale) {
               toast({
-                  title: 'Sale Completed!',
-                  description: `Invoice ${result.sale.invoiceNumber} created.`
+                  title: '¡Venta completada!',
+                  description: `Factura ${result.sale.invoiceNumber} creada.`
               });
               handleClearSale();
               router.push(`/sales/${result.sale.id}/ticket`);
@@ -192,7 +192,7 @@ export default function PosInterface({ initialProducts, customers }: PosInterfac
             if (!isNaN(newQuantity)) {
                 const item = cart.find(i => i.product.id === selectedCartItemId);
                 if (item && newQuantity > item.product.stock) {
-                    toast({ title: "Stock limit reached", variant: "destructive" });
+                    toast({ title: "Límite de stock alcanzado", variant: "destructive" });
                     return item.product.stock.toString();
                 }
             }
@@ -208,7 +208,7 @@ export default function PosInterface({ initialProducts, customers }: PosInterfac
         <div className="relative mb-4">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
           <Input
-            placeholder="Search products..."
+            placeholder="Buscar productos..."
             className="pl-10"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -268,7 +268,7 @@ export default function PosInterface({ initialProducts, customers }: PosInterfac
             <ScrollArea className="flex-1 -mx-4">
               <div className="px-4">
                 {cart.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-10">El carrito esta vacío</p>
+                  <p className="text-center text-muted-foreground py-10">El carrito está vacío</p>
                 ) : (
                   <ul className="space-y-1">
                     {cart.map((item) => (

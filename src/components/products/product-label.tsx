@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useRef } from "react";
@@ -21,7 +22,7 @@ export default function ProductLabel({ product }: ProductLabelProps) {
     });
 
     const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat('en-US', {
+        return new Intl.NumberFormat('es-US', {
             style: 'currency',
             currency: 'USD',
         }).format(amount);
@@ -46,7 +47,7 @@ export default function ProductLabel({ product }: ProductLabelProps) {
                     <p className="text-center text-2xl font-black my-2">{formatCurrency(product.price)}</p>
                     <Image
                         src={barcodeUrl}
-                        alt={`Barcode for ${product.name}`}
+                        alt={`Código de barras para ${product.name}`}
                         width={280}
                         height={50}
                         className="object-contain"
