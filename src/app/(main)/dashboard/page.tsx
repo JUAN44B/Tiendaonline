@@ -80,7 +80,7 @@ export default function DashboardPage() {
               <div className="grid grid-cols-2 gap-4">
                 {section.links.map((link) => (
                   <Link
-                    key={link.href}
+                    key={link.label}
                     href={link.href}
                     className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg bg-muted hover:bg-accent hover:text-accent-foreground transition-colors"
                   >
