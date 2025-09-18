@@ -8,7 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Printer, Store } from "lucide-react";
 import Image from "next/image";
-import { useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { useReactToPrint } from "react-to-print";
 import Link from "next/link";
 
@@ -18,8 +18,8 @@ interface SaleTicketProps {
   productMap: Map<string, string>;
 }
 
-export default function SaleTicket({ sale, customer, productMap }: SaleTicketProps) {
-    const componentRef = useRef(null);
+// Create a new component that can be referenced for printing
+const PrintableTicket = React.forwardRef<HTMLDivElement, SaleTicketProps>(({ sale, customer, productMap }, ref) => {
     const [qrCodeUrl, setQrCodeUrl] = useState('');
     const [formattedDate, setFormattedDate] = useState('');
 
@@ -40,11 +40,6 @@ export default function SaleTicket({ sale, customer, productMap }: SaleTicketPro
         );
     }, [sale.date]);
 
-    const handlePrint = useReactToPrint({
-        content: () => componentRef.current,
-        documentTitle: `Ticket-${sale.invoiceNumber}`,
-    });
-
     const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat('es-US', {
             style: 'currency',
@@ -55,18 +50,8 @@ export default function SaleTicket({ sale, customer, productMap }: SaleTicketPro
     const subtotal = sale.items.reduce((acc, item) => acc + item.subtotal, 0);
     const tax = sale.total - subtotal;
 
-  return (
-    <div className="w-full max-w-md">
-        <div className="flex gap-4 mb-4 justify-end">
-             <Button variant="outline" asChild>
-                <Link href="/pos">Nueva Venta</Link>
-            </Button>
-            <Button onClick={handlePrint}>
-                <Printer className="mr-2 h-4 w-4" />
-                Imprimir Ticket
-            </Button>
-        </div>
-        <div ref={componentRef} className="p-2">
+    return (
+        <div ref={ref} className="p-2">
             <Card className="font-mono text-sm mx-auto w-[320px] shadow-none border-none bg-white text-black">
                 <CardHeader className="text-center p-4">
                     <div className="flex justify-center items-center gap-2 mb-2">
@@ -136,6 +121,36 @@ export default function SaleTicket({ sale, customer, productMap }: SaleTicketPro
                 </CardFooter>
             </Card>
         </div>
+    );
+});
+PrintableTicket.displayName = 'PrintableTicket';
+
+
+export default function SaleTicket({ sale, customer, productMap }: SaleTicketProps) {
+    const componentRef = useRef<HTMLDivElement>(null);
+
+    const handlePrint = useReactToPrint({
+        content: () => componentRef.current,
+        documentTitle: `Ticket-${sale.invoiceNumber}`,
+    });
+
+  return (
+    <div className="w-full max-w-md">
+        <div className="flex gap-4 mb-4 justify-end">
+             <Button variant="outline" asChild>
+                <Link href="/pos">Nueva Venta</Link>
+            </Button>
+            <Button onClick={handlePrint}>
+                <Printer className="mr-2 h-4 w-4" />
+                Imprimir Ticket
+            </Button>
+        </div>
+        <PrintableTicket
+            ref={componentRef}
+            sale={sale}
+            customer={customer}
+            productMap={productMap}
+        />
     </div>
   );
 }
