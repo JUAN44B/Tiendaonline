@@ -1,57 +1,97 @@
 import { PageHeader } from "@/components/page-header";
-import StatsCards from "@/components/dashboard/stats-cards";
-import SalesChart from "@/components/dashboard/sales-chart";
-import { Suspense } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import RecentSales from "@/components/dashboard/recent-sales";
-import TopProducts from "@/components/dashboard/top-products";
+import {
+  ShoppingCart,
+  Package,
+  Users,
+  Receipt,
+  Folder,
+  PlusCircle,
+} from "lucide-react";
+import Link from "next/link";
+
+const quickLinks = [
+  {
+    title: "Gestión de Ventas",
+    links: [
+      {
+        href: "/pos",
+        label: "Punto de Venta",
+        icon: ShoppingCart,
+      },
+      {
+        href: "/sales",
+        label: "Historial de Ventas",
+        icon: Receipt,
+      },
+    ],
+  },
+  {
+    title: "Gestión de Inventario",
+    links: [
+      {
+        href: "/products",
+        label: "Ver Productos",
+        icon: Package,
+      },
+      {
+        href: "/products/new",
+        label: "Añadir Producto",
+        icon: PlusCircle,
+      },
+      {
+        href: "/categories",
+        label: "Categorías",
+        icon: Folder,
+      },
+    ],
+  },
+  {
+    title: "Gestión de Clientes",
+    links: [
+      {
+        href: "/customers",
+        label: "Ver Clientes",
+        icon: Users,
+      },
+      {
+        href: "/customers", // The dialog is on this page
+        label: "Añadir Cliente",
+        icon: PlusCircle,
+      },
+    ],
+  },
+];
 
 export default function DashboardPage() {
   return (
     <div>
       <PageHeader
-        title="Dashboard"
-        description="Here's a snapshot of your business performance."
+        title="Panel de Control"
+        description="Accesos rápidos a las funciones principales de tu negocio."
       />
-      <div className="grid gap-6">
-        <Suspense fallback={<StatsCards.Skeleton />}>
-          <StatsCards />
-        </Suspense>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Card className="lg:col-span-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {quickLinks.map((section) => (
+          <Card key={section.title}>
             <CardHeader>
-              <CardTitle>Weekly Sales</CardTitle>
+              <CardTitle>{section.title}</CardTitle>
             </CardHeader>
             <CardContent>
-              <Suspense fallback={<Skeleton className="h-[300px] w-full" />}>
-                <SalesChart />
-              </Suspense>
+              <div className="grid grid-cols-2 gap-4">
+                {section.links.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg bg-muted hover:bg-accent hover:text-accent-foreground transition-colors"
+                  >
+                    <link.icon className="h-8 w-8" />
+                    <span className="text-sm font-medium text-center">{link.label}</span>
+                  </Link>
+                ))}
+              </div>
             </CardContent>
           </Card>
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Sales</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Suspense fallback={<RecentSales.Skeleton />}>
-                    <RecentSales />
-                </Suspense>
-              </CardContent>
-            </Card>
-             <Card>
-              <CardHeader>
-                <CardTitle>Top Selling Products</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Suspense fallback={<TopProducts.Skeleton />}>
-                    <TopProducts />
-                </Suspense>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+        ))}
       </div>
     </div>
   );
