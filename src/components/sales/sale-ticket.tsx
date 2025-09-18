@@ -98,7 +98,7 @@ export default function SaleTicket({ sale, customer, productMap }: SaleTicketPro
                         <TableBody>
                             {sale.items.map((item) => (
                                 <TableRow key={item.productId} className="border-none">
-                                    <TableCell className="p-1 font-normal">{productMap.get(item.productId) || 'Unknown Product'}</TableCell>
+                                    <TableCell className="p-1 font-normal">{productMap.get(item.productId) || 'Producto Desconocido'}</TableCell>
                                     <TableCell className="p-1 font-normal text-center">{item.quantity}</TableCell>
                                     <TableCell className="p-1 font-normal text-right">{formatCurrency(item.subtotal)}</TableCell>
                                 </TableRow>
