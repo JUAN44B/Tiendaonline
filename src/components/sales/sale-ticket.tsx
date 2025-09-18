@@ -21,13 +21,24 @@ interface SaleTicketProps {
 export default function SaleTicket({ sale, customer, productMap }: SaleTicketProps) {
     const componentRef = useRef(null);
     const [qrCodeUrl, setQrCodeUrl] = useState('');
+    const [formattedDate, setFormattedDate] = useState('');
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
             const currentUrl = window.location.href;
             setQrCodeUrl(`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(currentUrl)}`);
         }
-    }, []);
+        
+        setFormattedDate(
+            new Date(sale.date).toLocaleString('es-ES', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+            })
+        );
+    }, [sale.date]);
 
     const handlePrint = useReactToPrint({
         content: () => componentRef.current,
@@ -40,16 +51,6 @@ export default function SaleTicket({ sale, customer, productMap }: SaleTicketPro
             currency: 'USD',
         }).format(amount);
     };
-
-    const formatDate = (dateString: string) => {
-        return new Date(dateString).toLocaleString('es-ES', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-        });
-    }
 
     const subtotal = sale.items.reduce((acc, item) => acc + item.subtotal, 0);
     const tax = sale.total - subtotal;
@@ -78,7 +79,7 @@ export default function SaleTicket({ sale, customer, productMap }: SaleTicketPro
                 <CardContent className="p-4">
                     <div className="flex justify-between text-xs mb-2">
                         <span>Ticket: {sale.invoiceNumber}</span>
-                        <span>{formatDate(sale.date)}</span>
+                        <span>{formattedDate}</span>
                     </div>
                     <Separator className="my-2 border-dashed border-gray-400" />
                     <div className="text-xs mb-2">
