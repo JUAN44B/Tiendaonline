@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useRef } from "react";
+import React, { useRef } from "react";
 import type { Product } from "@/lib/definitions";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -13,8 +13,29 @@ interface ProductLabelProps {
     product: Product;
 }
 
+// Create a new component that can be referenced for printing
+const PrintableLabel = React.forwardRef<HTMLDivElement, { product: Product, barcodeUrl: string, formatCurrency: (amount: number) => string }>(({ product, barcodeUrl, formatCurrency }, ref) => (
+    <div ref={ref} className="p-2">
+        <div className="border border-dashed border-gray-400 p-4 w-[320px] h-[160px] mx-auto bg-white text-black flex flex-col items-center justify-center font-sans">
+            <p className="text-center font-bold text-lg truncate w-full">{product.name}</p>
+            <p className="text-center text-2xl font-black my-2">{formatCurrency(product.price)}</p>
+            <Image
+                src={barcodeUrl}
+                alt={`Código de barras para ${product.name}`}
+                width={280}
+                height={50}
+                className="object-contain"
+                data-ai-hint="product barcode"
+            />
+             <p className="text-xs">{product.id}</p>
+        </div>
+    </div>
+));
+PrintableLabel.displayName = 'PrintableLabel';
+
+
 export default function ProductLabel({ product }: ProductLabelProps) {
-    const componentRef = useRef(null);
+    const componentRef = useRef<HTMLDivElement>(null);
     
     const handlePrint = useReactToPrint({
         content: () => componentRef.current,
@@ -41,21 +62,12 @@ export default function ProductLabel({ product }: ProductLabelProps) {
                     Imprimir Etiqueta
                 </Button>
             </div>
-            <div ref={componentRef} className="p-2">
-                <div className="border border-dashed border-gray-400 p-4 w-[320px] h-[160px] mx-auto bg-white text-black flex flex-col items-center justify-center font-sans">
-                    <p className="text-center font-bold text-lg truncate w-full">{product.name}</p>
-                    <p className="text-center text-2xl font-black my-2">{formatCurrency(product.price)}</p>
-                    <Image
-                        src={barcodeUrl}
-                        alt={`Código de barras para ${product.name}`}
-                        width={280}
-                        height={50}
-                        className="object-contain"
-                        data-ai-hint="product barcode"
-                    />
-                     <p className="text-xs">{product.id}</p>
-                </div>
-            </div>
+            <PrintableLabel 
+                ref={componentRef} 
+                product={product}
+                barcodeUrl={barcodeUrl}
+                formatCurrency={formatCurrency}
+            />
         </div>
     );
 }
