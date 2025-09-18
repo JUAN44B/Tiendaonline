@@ -1,28 +1,21 @@
 'use client';
 
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useEffect, useState } from 'react';
+import { getWeeklySalesData } from '@/lib/data';
 
-// This would typically come from an API call
-const getSalesData = () => {
-  const data = [];
-  for (let i = 6; i >= 0; i--) {
-    const date = new Date();
-    date.setDate(date.getDate() - i);
-    data.push({
-      name: date.toLocaleDateString('en-US', { weekday: 'short' }),
-      total: Math.floor(Math.random() * 1500) + 500,
-    });
-  }
-  return data;
+type SalesData = {
+    name: string;
+    total: number;
 };
 
 export default function SalesChart() {
-  const [salesData, setSalesData] = useState<any[]>([]);
+  const [salesData, setSalesData] = useState<SalesData[]>([]);
   
   useEffect(() => {
-    setSalesData(getSalesData());
+    // This is now a server action, but we call it in useEffect to keep it a client component
+    // In a real app, you might use a library like SWR or React Query
+    getWeeklySalesData().then(data => setSalesData(data));
   }, []);
 
   return (

@@ -7,10 +7,10 @@ let products: Product[] = [
   { id: '2', name: 'Minimalist Desk', description: 'A modern, minimalist wooden desk that fits perfectly in any home office.', price: 249.50, categoryId: '2', stock: 10, imageUrl: placeholderImages[1].imageUrl },
   { id: '3', name: 'SwiftBook Pro', description: 'A sleek, powerful laptop for professionals on the go. Features a stunning display and all-day battery life.', price: 1299.00, categoryId: '3', stock: 8, imageUrl: placeholderImages[2].imageUrl },
   { id: '4', name: 'CrystalView Monitor', description: 'A high-resolution 27-inch 4K monitor with vibrant colors and wide viewing angles.', price: 499.99, categoryId: '3', stock: 20, imageUrl: placeholderImages[3].imageUrl },
-  { id: '5', name: 'MechanoKey Keyboard', description: 'A comfortable, mechanical keyboard with customizable RGB lighting and tactile switches.', price: 149.00, categoryId: '4', stock: 30, imageUrl: placeholderImages[4].imageUrl },
+  { id: '5', name: 'MechanoKey Keyboard', description: 'A comfortable, mechanical keyboard with customizable RGB lighting and tactile switches.', price: 149.00, categoryId: '4', stock: 3, imageUrl: placeholderImages[4].imageUrl },
   { id: '6', name: 'GlidePoint Mouse', description: 'A wireless, ergonomic mouse designed for precision and comfort during long work sessions.', price: 79.99, categoryId: '4', stock: 25, imageUrl: placeholderImages[5].imageUrl },
   { id: '7', name: 'SoundScape Headphones', description: 'Premium noise-cancelling over-ear headphones with immersive audio quality.', price: 349.00, categoryId: '4', stock: 18, imageUrl: placeholderImages[6].imageUrl },
-  { id: '8', name: 'Lumina Desk Lamp', description: 'A stylish LED desk lamp with adjustable brightness and color temperature for optimal lighting.', price: 59.95, categoryId: '2', stock: 40, imageUrl: placeholderImages[7].imageUrl },
+  { id: '8', name: 'Lumina Desk Lamp', description: 'A stylish LED desk lamp with adjustable brightness and color temperature for optimal lighting.', price: 59.95, categoryId: '2', stock: 4, imageUrl: placeholderImages[7].imageUrl },
 ];
 
 let categories: Category[] = [
@@ -165,5 +165,52 @@ export const getDashboardStats = async () => {
     const weeklySales = sales.filter(s => new Date(s.date) >= startOfWeek).reduce((sum, s) => sum + s.total, 0);
     const monthlySales = sales.filter(s => new Date(s.date) >= startOfMonth).reduce((sum, s) => sum + s.total, 0);
 
-    return { dailySales, weeklySales, monthlySales };
+    const totalCustomers = customers.length;
+    const lowStockProducts = products.filter(p => p.stock < 5).length;
+
+    return { dailySales, weeklySales, monthlySales, totalCustomers, lowStockProducts };
+};
+
+export const getWeeklySalesData = async () => {
+    await delay(200);
+    const salesData = [];
+    const today = new Date();
+    for (let i = 6; i >= 0; i--) {
+        const date = new Date(today);
+        date.setDate(today.getDate() - i);
+        const dayStart = new Date(date.setHours(0,0,0,0));
+        const dayEnd = new Date(date.setHours(23,59,59,999));
+        
+        const total = sales
+            .filter(s => {
+                const saleDate = new Date(s.date);
+                return saleDate >= dayStart && saleDate <= dayEnd;
+            })
+            .reduce((sum, s) => sum + s.total, 0);
+        
+        salesData.push({
+            name: dayStart.toLocaleDateString('en-US', { weekday: 'short' }),
+            total,
+        });
+    }
+    return salesData;
+};
+
+export const getTopSellingProducts = async (limit = 5) => {
+    await delay(250);
+    const productSales = new Map<string, { name: string; imageUrl: string; quantity: number }>();
+
+    sales.forEach(sale => {
+        sale.items.forEach(item => {
+            const product = products.find(p => p.id === item.productId);
+            if(product) {
+                const existing = productSales.get(item.productId) || { name: product.name, imageUrl: product.imageUrl, quantity: 0 };
+                productSales.set(item.productId, { ...existing, quantity: existing.quantity + item.quantity });
+            }
+        });
+    });
+
+    return Array.from(productSales.values())
+        .sort((a, b) => b.quantity - a.quantity)
+        .slice(0, limit);
 };
