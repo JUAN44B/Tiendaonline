@@ -7,19 +7,21 @@ const config = {
     database: process.env.DB_DATABASE,
     options: {
         encrypt: process.env.DB_ENCRYPT === 'true', // Use true for Azure SQL Database, or if you have an SSL certificate
-        trustServerCertificate: process.env.DB_TRUST_SERVER_CERTIFICATE === 'true' // Change to true for local dev / self-signed certs
+        trustServerCertificate: process.env.DB_TRUST_SERVER_CERTIFICATE === 'true', // Change to true for local dev / self-signed certs
+        integratedSecurity: process.env.DB_INTEGRATED_SECURITY === 'true',
     }
 };
 
 let pool: sql.ConnectionPool | null = null;
 
 export async function getConnection() {
-    if (pool) {
-        return pool.connect();
+    if (pool && pool.connected) {
+        return pool;
     }
     try {
         pool = new sql.ConnectionPool(config);
-        return await pool.connect();
+        await pool.connect();
+        return pool;
     } catch (err) {
         console.error('Database connection failed:', err);
         pool = null; // Reset pool on connection error
