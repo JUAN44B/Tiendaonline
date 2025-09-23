@@ -4,10 +4,12 @@ const config = {
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     server: process.env.DB_SERVER || 'localhost',
+    port: Number(process.env.DB_PORT) || 1433,
     database: process.env.DB_DATABASE,
     options: {
-        encrypt: process.env.DB_ENCRYPT === 'true', // Use true for Azure SQL Database, or if you have an SSL certificate
-        trustServerCertificate: process.env.DB_TRUST_SERVER_CERTIFICATE === 'true', // Change to true for local dev / self-signed certs
+        encrypt: process.env.DB_ENCRYPT === 'true',
+        trustServerCertificate: process.env.DB_TRUST_SERVER_CERTIFICATE === 'true',
+        instanceName: 'SQLEXPRESS',
         integratedSecurity: process.env.DB_INTEGRATED_SECURITY === 'true',
     }
 };
