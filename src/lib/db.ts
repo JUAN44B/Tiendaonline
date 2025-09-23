@@ -1,3 +1,4 @@
+
 import sql from 'mssql';
 import { config as dotenvConfig } from 'dotenv';
 
@@ -7,14 +8,11 @@ dotenvConfig({ path: '.env' });
 const config = {
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
-    server: process.env.DB_SERVER || 'localhost',
-    port: Number(process.env.DB_PORT) || 1433,
+    server: 'localhost\\SQLEXPRESS', // Hardcoded for simplicity and to avoid resolution issues
     database: process.env.DB_DATABASE,
     options: {
-        encrypt: process.env.DB_ENCRYPT === 'true',
+        encrypt: process.env.DB_ENCRYPT === 'true', 
         trustServerCertificate: process.env.DB_TRUST_SERVER_CERTIFICATE === 'true',
-        instanceName: 'SQLEXPRESS',
-        integratedSecurity: process.env.DB_INTEGRATED_SECURITY === 'true',
     }
 };
 
