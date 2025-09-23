@@ -3,12 +3,12 @@
 
 import { useState, useMemo, useTransition, useCallback, useEffect } from 'react';
 import Image from 'next/image';
-import { Search, X, Plus, Minus, Loader2, Trash2 } from 'lucide-react';
+import { Search, X, Plus, Minus, Loader2, Trash2, UserPlus, ShoppingCart } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 import type { Product, Customer } from '@/lib/definitions';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -16,6 +16,7 @@ import { Separator } from '@/components/ui/separator';
 import { createSaleAction } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { CustomerDialog } from '../customers/customer-dialog';
 
 type CartItem = {
   product: Product;
@@ -33,7 +34,6 @@ export default function PosInterface({ initialProducts, customers }: PosInterfac
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | undefined>(undefined);
   const [isPending, startTransition] = useTransition();
   const [selectedCartItemId, setSelectedCartItemId] = useState<string | null>(null);
-  const [quantityInput, setQuantityInput] = useState('');
   
   const { toast } = useToast();
   const router = useRouter();
@@ -69,7 +69,6 @@ export default function PosInterface({ initialProducts, customers }: PosInterfac
     const item = cart.find(i => i.product.id === productId);
     if(item && newQuantity > item.product.stock) {
         toast({ title: "Límite de stock alcanzado", variant: "destructive"})
-        setQuantityInput(item.product.stock.toString());
         return;
     }
 
@@ -91,34 +90,6 @@ export default function PosInterface({ initialProducts, customers }: PosInterfac
       );
     }
   }, [cart, toast]);
-
-  useEffect(() => {
-    if (quantityInput && selectedCartItemId) {
-      const newQuantity = parseInt(quantityInput, 10);
-      if (!isNaN(newQuantity)) {
-          const item = cart.find(i => i.product.id === selectedCartItemId);
-          if(item && newQuantity > item.product.stock) {
-              toast({ title: "Límite de stock alcanzado", variant: "destructive"})
-              setCart(prevCart => prevCart.map(i => i.product.id === selectedCartItemId ? {...i, quantity: item.product.stock} : i));
-          } else {
-               updateQuantity(selectedCartItemId, newQuantity);
-          }
-      }
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [quantityInput]);
-
-  useEffect(() => {
-    if (selectedCartItemId) {
-        const selectedItem = cart.find(item => item.product.id === selectedCartItemId);
-        if (selectedItem) {
-            setQuantityInput(selectedItem.quantity.toString());
-        }
-    } else {
-        setQuantityInput('');
-    }
-  }, [selectedCartItemId, cart]);
-
 
   const cartSubtotal = useMemo(() => {
     return cart.reduce((total, item) => total + item.product.price * item.quantity, 0);
@@ -172,32 +143,6 @@ export default function PosInterface({ initialProducts, customers }: PosInterfac
     setCart([]);
     setSelectedCustomerId(undefined);
     setSelectedCartItemId(null);
-    setQuantityInput('');
-  };
-
-  const handleNumpadClick = (value: string) => {
-    if (!selectedCartItemId) {
-        toast({ title: 'Seleccione un producto del carrito primero', variant: 'destructive'});
-        return;
-    }
-     if (value === 'C') {
-        setQuantityInput('');
-    } else if (value === 'del') {
-        setQuantityInput(prev => prev.slice(0, -1));
-    } else {
-        setQuantityInput(prev => {
-            const newValue = prev + value;
-            const newQuantity = parseInt(newValue, 10);
-            if (!isNaN(newQuantity)) {
-                const item = cart.find(i => i.product.id === selectedCartItemId);
-                if (item && newQuantity > item.product.stock) {
-                    toast({ title: "Límite de stock alcanzado", variant: "destructive" });
-                    return item.product.stock.toString();
-                }
-            }
-            return newValue;
-        });
-    }
   };
 
   return (
@@ -207,20 +152,18 @@ export default function PosInterface({ initialProducts, customers }: PosInterfac
         <div className="relative mb-4">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
           <Input
-            placeholder="Buscar productos..."
-            className="pl-10"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Buscar productos por nombre..."
+            className="pl-10 text-base"
           />
         </div>
-        <Card className="flex-1">
+        <Card className="flex-1 border-none shadow-none">
           <CardContent className="p-0 h-full">
             <ScrollArea className="h-full">
-                <div className="p-4 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+                <div className="p-1 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
               {filteredProducts.map((product) => (
                 <Card
                   key={product.id}
-                  className="cursor-pointer hover:shadow-md transition-shadow"
+                  className="cursor-pointer hover:shadow-lg transition-shadow group overflow-hidden"
                   onClick={() => addToCart(product)}
                 >
                   <div className="relative aspect-square w-full">
@@ -228,13 +171,14 @@ export default function PosInterface({ initialProducts, customers }: PosInterfac
                       src={product.imageUrl}
                       alt={product.name}
                       fill
-                      className="object-cover rounded-t-lg"
+                      className="object-cover group-hover:scale-105 transition-transform"
                       data-ai-hint="product image"
                     />
+                     <div className="absolute inset-0 bg-black/20" />
                   </div>
-                  <div className="p-3">
+                  <div className="p-3 bg-card">
                     <h3 className="font-semibold text-sm truncate">{product.name}</h3>
-                    <p className="text-sm text-muted-foreground">{formatCurrency(product.price)}</p>
+                    <p className="text-lg font-bold text-primary">{formatCurrency(product.price)}</p>
                   </div>
                 </Card>
               ))}
@@ -245,13 +189,12 @@ export default function PosInterface({ initialProducts, customers }: PosInterfac
       </div>
 
       {/* Cart Section */}
-      <div className="h-full flex flex-col">
-        <Card className="flex-1 flex flex-col">
-          <CardContent className="p-4 flex-1 flex flex-col">
-            <h2 className="text-lg font-semibold mb-4">Venta Actual</h2>
-            <div className="mb-4">
+      <div className="h-full flex flex-col bg-card rounded-xl border">
+        <CardHeader>
+            <CardTitle>Venta Actual</CardTitle>
+             <div className="flex items-center gap-2 pt-2">
                 <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
-                    <SelectTrigger>
+                    <SelectTrigger className="flex-1">
                         <SelectValue placeholder="Seleccionar un cliente" />
                     </SelectTrigger>
                     <SelectContent>
@@ -260,76 +203,85 @@ export default function PosInterface({ initialProducts, customers }: PosInterfac
                         ))}
                     </SelectContent>
                 </Select>
+                 <CustomerDialog>
+                    <Button variant="outline" size="icon">
+                        <UserPlus className="h-4 w-4" />
+                        <span className="sr-only">Añadir Cliente</span>
+                    </Button>
+                </CustomerDialog>
             </div>
-            
-            <Separator className="mb-4" />
-
-            <ScrollArea className="flex-1 -mx-4">
-              <div className="px-4">
+        </CardHeader>
+        <CardContent className="p-0 flex-1 flex flex-col">
+            <Separator />
+            <ScrollArea className="flex-1">
+              <div className="p-4">
                 {cart.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-10">El carrito está vacío</p>
+                    <div className="text-center text-muted-foreground py-10 flex flex-col items-center gap-4">
+                        <ShoppingCart className="h-16 w-16 text-muted" />
+                        <p className="font-medium">El carrito está vacío</p>
+                        <p className="text-sm">Añada productos para empezar una venta.</p>
+                    </div>
                 ) : (
-                  <ul className="space-y-1">
+                  <ul className="space-y-3">
                     {cart.map((item) => (
                       <li key={item.product.id} 
-                          className={cn("flex items-center gap-4 p-2 rounded-md cursor-pointer", selectedCartItemId === item.product.id ? 'bg-accent' : '')}
-                          onClick={() => {
-                            setSelectedCartItemId(item.product.id);
-                            setQuantityInput(item.quantity.toString());
-                          }}
+                          className={cn("flex items-center gap-4 p-2 rounded-lg cursor-pointer transition-colors", selectedCartItemId === item.product.id ? 'bg-primary/10' : 'hover:bg-muted')}
+                          onClick={() => setSelectedCartItemId(item.product.id)}
                       >
                         <Image
                           src={item.product.imageUrl}
                           alt={item.product.name}
-                          width={48}
-                          height={48}
+                          width={64}
+                          height={64}
                           className="rounded-md object-cover"
                            data-ai-hint="product image thumbnail"
                         />
                         <div className="flex-1">
                           <p className="font-semibold text-sm">{item.product.name}</p>
-                           <p className="text-xs text-muted-foreground">{formatCurrency(item.product.price)}</p>
+                           <p className="text-sm text-muted-foreground">{formatCurrency(item.product.price)}</p>
                         </div>
                         <div className="flex items-center gap-2">
-                           <Button size="icon" variant="outline" className="h-6 w-6" onClick={(e) => { e.stopPropagation(); updateQuantity(item.product.id, item.quantity - 1); }}><Minus className="h-3 w-3"/></Button>
-                           <span className="w-6 text-center">{item.quantity}</span>
-                           <Button size="icon" variant="outline" className="h-6 w-6" onClick={(e) => { e.stopPropagation(); updateQuantity(item.product.id, item.quantity + 1); }}><Plus className="h-3 w-3"/></Button>
+                           <Button size="icon" variant="ghost" className="h-7 w-7 rounded-full" onClick={(e) => { e.stopPropagation(); updateQuantity(item.product.id, item.quantity - 1); }}><Minus className="h-4 w-4"/></Button>
+                           <span className="w-6 text-center font-medium text-base">{item.quantity}</span>
+                           <Button size="icon" variant="ghost" className="h-7 w-7 rounded-full" onClick={(e) => { e.stopPropagation(); updateQuantity(item.product.id, item.quantity + 1); }}><Plus className="h-4 w-4"/></Button>
                         </div>
-                        <p className="font-medium text-sm w-20 text-right">{formatCurrency(item.product.price * item.quantity)}</p>
                       </li>
                     ))}
                   </ul>
                 )}
               </div>
             </ScrollArea>
+        </CardContent>
 
-            <Separator className="my-4" />
-            
-            <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2 text-sm">
-                    <div className="flex justify-between"><span>Subtotal</span><span>{formatCurrency(cartSubtotal)}</span></div>
-                    <div className="flex justify-between"><span>Impuestos (8%)</span><span>{formatCurrency(cartTax)}</span></div>
-                    <div className="flex justify-between font-bold text-base"><span>Total</span><span className='text-xl'>{formatCurrency(cartTotal)}</span></div>
+        <div className="p-4 border-t bg-muted/50 rounded-b-xl">
+             <div className="space-y-2 text-sm mb-4">
+                <div className="flex justify-between">
+                    <span className="text-muted-foreground">Subtotal</span>
+                    <span>{formatCurrency(cartSubtotal)}</span>
                 </div>
-                 <div className="grid grid-cols-3 gap-2">
-                    {['1', '2', '3', '4', '5', '6', '7', '8', '9', 'C', '0', 'del'].map((key) => (
-                        <Button key={key} variant="outline" className="h-10 text-lg" onClick={() => handleNumpadClick(key)}>
-                            {key === 'del' ? <X className="h-5 w-5"/> : key}
-                        </Button>
-                    ))}
-                     <Button variant="destructive" className="h-10 text-lg col-span-3" onClick={handleClearSale}>
-                        <Trash2 className="mr-2 h-4 w-4" /> Cancelar
-                    </Button>
+                <div className="flex justify-between">
+                    <span className="text-muted-foreground">Impuestos (8%)</span>
+                    <span>{formatCurrency(cartTax)}</span>
+                </div>
+                <Separator />
+                <div className="flex justify-between items-baseline font-bold text-base">
+                    <span>Total</span>
+                    <span className='text-2xl text-primary'>{formatCurrency(cartTotal)}</span>
                 </div>
             </div>
-
-            <Button className="w-full mt-4" size="lg" onClick={handleCompleteSale} disabled={isPending}>
-                {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
-                Completar Venta
-            </Button>
-          </CardContent>
-        </Card>
+            <div className="grid grid-cols-2 gap-2">
+                <Button variant="outline" size="lg" onClick={handleClearSale} disabled={cart.length === 0 || isPending}>
+                    <Trash2 className="mr-2 h-4 w-4" /> Cancelar
+                </Button>
+                <Button size="lg" onClick={handleCompleteSale} disabled={isPending || cart.length === 0 || !selectedCustomerId}>
+                    {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+                    Completar Venta
+                </Button>
+            </div>
+        </div>
       </div>
     </div>
   );
 }
+
+    
