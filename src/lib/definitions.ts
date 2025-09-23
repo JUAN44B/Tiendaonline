@@ -26,10 +26,11 @@ export type SaleItem = {
   quantity: number;
   unitPrice: number;
   subtotal: number;
+  saleId?: string; // Foreign key
 };
 
 export type Sale = {
-  id: string;
+  id:string;
   invoiceNumber: string;
   customerId: string;
   date: string;

@@ -1,216 +1,266 @@
-import type { Product, Category, Customer, Sale } from './definitions';
-import { placeholderImages } from '@/lib/placeholder-images.json';
+import type { Product, Category, Customer, Sale, SaleItem } from './definitions';
+import { getConnection } from './db';
+import sql from 'mssql';
 
-// In-memory data store
-let products: Product[] = [
-  { id: '1', name: 'ErgoChair Pro', description: 'A stylish, ergonomic office chair designed for maximum comfort and productivity.', price: 399.99, categoryId: '1', stock: 15, imageUrl: placeholderImages[0].imageUrl },
-  { id: '2', name: 'Minimalist Desk', description: 'A modern, minimalist wooden desk that fits perfectly in any home office.', price: 249.50, categoryId: '2', stock: 10, imageUrl: placeholderImages[1].imageUrl },
-  { id: '3', name: 'SwiftBook Pro', description: 'A sleek, powerful laptop for professionals on the go. Features a stunning display and all-day battery life.', price: 1299.00, categoryId: '3', stock: 8, imageUrl: placeholderImages[2].imageUrl },
-  { id: '4', name: 'CrystalView Monitor', description: 'A high-resolution 27-inch 4K monitor with vibrant colors and wide viewing angles.', price: 499.99, categoryId: '3', stock: 20, imageUrl: placeholderImages[3].imageUrl },
-  { id: '5', name: 'MechanoKey Keyboard', description: 'A comfortable, mechanical keyboard with customizable RGB lighting and tactile switches.', price: 149.00, categoryId: '4', stock: 3, imageUrl: placeholderImages[4].imageUrl },
-  { id: '6', name: 'GlidePoint Mouse', description: 'A wireless, ergonomic mouse designed for precision and comfort during long work sessions.', price: 79.99, categoryId: '4', stock: 25, imageUrl: placeholderImages[5].imageUrl },
-  { id: '7', name: 'SoundScape Headphones', description: 'Premium noise-cancelling over-ear headphones with immersive audio quality.', price: 349.00, categoryId: '4', stock: 18, imageUrl: placeholderImages[6].imageUrl },
-  { id: '8', name: 'Lumina Desk Lamp', description: 'A stylish LED desk lamp with adjustable brightness and color temperature for optimal lighting.', price: 59.95, categoryId: '2', stock: 4, imageUrl: placeholderImages[7].imageUrl },
-];
-
-let categories: Category[] = [
-  { id: '1', name: 'Chairs', description: 'Comfortable and ergonomic seating solutions.' },
-  { id: '2', name: 'Desks & Lighting', description: 'Workspace furniture and lighting.' },
-  { id: '3', name: 'Electronics', description: 'Computers and monitors.' },
-  { id: '4', name: 'Accessories', description: 'Peripherals and other accessories.' },
-];
-
-let customers: Customer[] = [
-  { id: '1', name: 'Alice Johnson', email: 'alice@example.com', phone: '123-456-7890' },
-  { id: '2', name: 'Bob Williams', email: 'bob@example.com', phone: '234-567-8901' },
-  { id: '3', name: 'Charlie Brown', email: 'charlie@example.com', phone: '345-678-9012' },
-  { id: '4', name: 'Diana Miller', email: 'diana@example.com', phone: '456-789-0123' },
-];
-
-let sales: Sale[] = [
-    {
-        id: '1',
-        invoiceNumber: 'INV-001',
-        customerId: '1',
-        date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-        total: 549.98,
-        items: [
-          { productId: '1', quantity: 1, unitPrice: 399.99, subtotal: 399.99 },
-          { productId: '5', quantity: 1, unitPrice: 149.99, subtotal: 149.99 },
-        ],
-    },
-    {
-        id: '2',
-        invoiceNumber: 'INV-002',
-        customerId: '2',
-        date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-        total: 1378.99,
-        items: [
-          { productId: '3', quantity: 1, unitPrice: 1299.00, subtotal: 1299.00 },
-          { productId: '6', quantity: 1, unitPrice: 79.99, subtotal: 79.99 },
-        ],
-    },
-    {
-        id: '3',
-        invoiceNumber: 'INV-003',
-        customerId: '1',
-        date: new Date().toISOString(),
-        total: 499.99,
-        items: [
-            { productId: '4', quantity: 1, unitPrice: 499.99, subtotal: 499.99 },
-        ],
-    },
-     {
-        id: '4',
-        invoiceNumber: 'INV-004',
-        customerId: '3',
-        date: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString(),
-        total: 309.45,
-        items: [
-          { productId: '2', quantity: 1, unitPrice: 249.50, subtotal: 249.50 },
-          { productId: '8', quantity: 1, unitPrice: 59.95, subtotal: 59.95 },
-        ],
-    },
-];
-
-
-// Simulate API latency
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+// Helper to ensure connection is available
+async function getRequest() {
+    const pool = await getConnection();
+    return pool.request();
+}
 
 // Products
-export const fetchProducts = async () => { await delay(100); return [...products]; };
-export const fetchProductById = async (id: string) => { await delay(50); return products.find(p => p.id === id); };
-export const saveProduct = async (product: Omit<Product, 'id'> & { id?: string }) => {
-  await delay(200);
-  if (product.id) {
-    const index = products.findIndex(p => p.id === product.id);
-    if (index !== -1) products[index] = { ...products[index], ...product };
-  } else {
-    const newProduct = { ...product, id: crypto.randomUUID() };
-    products.unshift(newProduct);
-  }
-  return true;
+export const fetchProducts = async (): Promise<Product[]> => {
+    const request = await getRequest();
+    const result = await request.query('SELECT * FROM Products ORDER BY Name');
+    return result.recordset;
 };
-export const deleteProduct = async (id: string) => { await delay(200); products = products.filter(p => p.id !== id); return true; };
+
+export const fetchProductById = async (id: string): Promise<Product | undefined> => {
+    const request = await getRequest();
+    const result = await request.input('id', sql.VarChar, id).query('SELECT * FROM Products WHERE id = @id');
+    return result.recordset[0];
+};
+
+export const saveProduct = async (product: Omit<Product, 'id'> & { id?: string }): Promise<boolean> => {
+    const request = await getRequest();
+    if (product.id) {
+        await request
+            .input('id', sql.VarChar, product.id)
+            .input('name', sql.NVarChar, product.name)
+            .input('description', sql.NVarChar, product.description)
+            .input('price', sql.Decimal(10, 2), product.price)
+            .input('categoryId', sql.VarChar, product.categoryId)
+            .input('stock', sql.Int, product.stock)
+            .input('imageUrl', sql.VarChar, product.imageUrl)
+            .query('UPDATE Products SET name = @name, description = @description, price = @price, categoryId = @categoryId, stock = @stock, imageUrl = @imageUrl WHERE id = @id');
+    } else {
+        const newId = crypto.randomUUID();
+        await request
+            .input('id', sql.VarChar, newId)
+            .input('name', sql.NVarChar, product.name)
+            .input('description', sql.NVarChar, product.description)
+            .input('price', sql.Decimal(10, 2), product.price)
+            .input('categoryId', sql.VarChar, product.categoryId)
+            .input('stock', sql.Int, product.stock)
+            .input('imageUrl', sql.VarChar, product.imageUrl)
+            .query('INSERT INTO Products (id, name, description, price, categoryId, stock, imageUrl) VALUES (@id, @name, @description, @price, @categoryId, @stock, @imageUrl)');
+    }
+    return true;
+};
+
+export const deleteProduct = async (id: string): Promise<boolean> => {
+    const request = await getRequest();
+    await request.input('id', sql.VarChar, id).query('DELETE FROM Products WHERE id = @id');
+    return true;
+};
 
 // Categories
-export const fetchCategories = async () => { await delay(100); return [...categories]; };
-export const saveCategory = async (category: Omit<Category, 'id'> & { id?: string }) => {
-  await delay(200);
-  if (category.id) {
-    const index = categories.findIndex(c => c.id === category.id);
-    if (index !== -1) categories[index] = { ...categories[index], ...category };
-  } else {
-    const newCategory = { ...category, id: crypto.randomUUID() };
-    categories.unshift(newCategory);
-  }
-  return true;
+export const fetchCategories = async (): Promise<Category[]> => {
+    const request = await getRequest();
+    const result = await request.query('SELECT * FROM Categories ORDER BY Name');
+    return result.recordset;
 };
-export const deleteCategory = async (id: string) => { await delay(200); categories = categories.filter(c => c.id !== id); return true; };
 
+export const saveCategory = async (category: Omit<Category, 'id'> & { id?: string }): Promise<boolean> => {
+    const request = await getRequest();
+    if (category.id) {
+        await request
+            .input('id', sql.VarChar, category.id)
+            .input('name', sql.NVarChar, category.name)
+            .input('description', sql.NVarChar, category.description)
+            .query('UPDATE Categories SET name = @name, description = @description WHERE id = @id');
+    } else {
+        const newId = crypto.randomUUID();
+        await request
+            .input('id', sql.VarChar, newId)
+            .input('name', sql.NVarChar, category.name)
+            .input('description', sql.NVarChar, category.description)
+            .query('INSERT INTO Categories (id, name, description) VALUES (@id, @name, @description)');
+    }
+    return true;
+};
+
+export const deleteCategory = async (id: string): Promise<boolean> => {
+    const request = await getRequest();
+    await request.input('id', sql.VarChar, id).query('DELETE FROM Categories WHERE id = @id');
+    return true;
+};
 
 // Customers
-export const fetchCustomers = async () => { await delay(100); return [...customers]; };
-export const fetchCustomerById = async (id: string) => { await delay(50); return customers.find(c => c.id === id); };
-export const saveCustomer = async (customer: Omit<Customer, 'id'> & { id?: string }) => {
-  await delay(200);
-  if (customer.id) {
-    const index = customers.findIndex(c => c.id === customer.id);
-    if (index !== -1) customers[index] = { ...customers[index], ...customer };
-  } else {
-    const newCustomer = { ...customer, id: crypto.randomUUID() };
-    customers.unshift(newCustomer);
-  }
-  return true;
+export const fetchCustomers = async (): Promise<Customer[]> => {
+    const request = await getRequest();
+    const result = await request.query('SELECT * FROM Customers ORDER BY Name');
+    return result.recordset;
 };
-export const deleteCustomer = async (id: string) => { await delay(200); customers = customers.filter(c => c.id !== id); return true; };
+
+export const fetchCustomerById = async (id: string): Promise<Customer | undefined> => {
+    const request = await getRequest();
+    const result = await request.input('id', sql.VarChar, id).query('SELECT * FROM Customers WHERE id = @id');
+    return result.recordset[0];
+};
+
+export const saveCustomer = async (customer: Omit<Customer, 'id'> & { id?: string }): Promise<boolean> => {
+    const request = await getRequest();
+    if (customer.id) {
+        await request
+            .input('id', sql.VarChar, customer.id)
+            .input('name', sql.NVarChar, customer.name)
+            .input('email', sql.NVarChar, customer.email)
+            .input('phone', sql.NVarChar, customer.phone)
+            .query('UPDATE Customers SET name = @name, email = @email, phone = @phone WHERE id = @id');
+    } else {
+        const newId = crypto.randomUUID();
+        await request
+            .input('id', sql.VarChar, newId)
+            .input('name', sql.NVarChar, customer.name)
+            .input('email', sql.NVarChar, customer.email)
+            .input('phone', sql.NVarChar, customer.phone)
+            .query('INSERT INTO Customers (id, name, email, phone) VALUES (@id, @name, @email, @phone)');
+    }
+    return true;
+};
+
+export const deleteCustomer = async (id: string): Promise<boolean> => {
+    const request = await getRequest();
+    await request.input('id', sql.VarChar, id).query('DELETE FROM Customers WHERE id = @id');
+    return true;
+};
 
 // Sales
-export const fetchSales = async () => { await delay(100); return [...sales].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()); };
-export const fetchSaleById = async (id: string) => { await delay(50); return sales.find(s => s.id === id); };
-export const saveSale = async (sale: Omit<Sale, 'id' | 'invoiceNumber'>) => {
-    await delay(300);
-    const lastInvoiceNumber = sales.reduce((max, s) => {
-        const num = parseInt(s.invoiceNumber.split('-')[1]);
-        return num > max ? num : max;
-    }, 0);
-    const newSale: Sale = {
-        ...sale,
-        id: crypto.randomUUID(),
-        invoiceNumber: `INV-${String(lastInvoiceNumber + 1).padStart(3, '0')}`,
-    };
+export const fetchSales = async (): Promise<Sale[]> => {
+    const request = await getRequest();
+    const salesResult = await request.query('SELECT * FROM Sales ORDER BY date DESC');
+    const sales: Sale[] = salesResult.recordset;
 
-    // Update stock
-    newSale.items.forEach(item => {
-        const product = products.find(p => p.id === item.productId);
-        if (product) {
-            product.stock -= item.quantity;
+    for (const sale of sales) {
+        const itemsResult = await request.input('saleId', sql.VarChar, sale.id).query('SELECT * FROM SaleItems WHERE saleId = @saleId');
+        sale.items = itemsResult.recordset;
+    }
+    return sales;
+};
+
+export const fetchSaleById = async (id: string): Promise<Sale | undefined> => {
+    const request = await getRequest();
+    const saleResult = await request.input('id', sql.VarChar, id).query('SELECT * FROM Sales WHERE id = @id');
+    const sale: Sale | undefined = saleResult.recordset[0];
+
+    if (sale) {
+        const itemsResult = await request.input('saleId', sql.VarChar, sale.id).query('SELECT * FROM SaleItems WHERE saleId = @saleId');
+        sale.items = itemsResult.recordset;
+    }
+    return sale;
+};
+
+export const saveSale = async (sale: Omit<Sale, 'id' | 'invoiceNumber'>): Promise<Sale> => {
+    const pool = await getConnection();
+    const transaction = new sql.Transaction(pool);
+    
+    try {
+        await transaction.begin();
+
+        const invRequest = new sql.Request(transaction);
+        const lastInvoiceResult = await invRequest.query("SELECT TOP 1 invoiceNumber FROM Sales ORDER BY invoiceNumber DESC");
+        const lastInvoiceNumber = lastInvoiceResult.recordset[0]?.invoiceNumber || 'INV-000';
+        const newInvoiceNum = parseInt(lastInvoiceNumber.split('-')[1]) + 1;
+        const newInvoiceNumber = `INV-${String(newInvoiceNum).padStart(3, '0')}`;
+        
+        const saleId = crypto.randomUUID();
+        const saleRequest = new sql.Request(transaction);
+        await saleRequest
+            .input('id', sql.VarChar, saleId)
+            .input('invoiceNumber', sql.VarChar, newInvoiceNumber)
+            .input('customerId', sql.VarChar, sale.customerId)
+            .input('date', sql.DateTime, new Date(sale.date))
+            .input('total', sql.Decimal(10, 2), sale.total)
+            .query('INSERT INTO Sales (id, invoiceNumber, customerId, date, total) VALUES (@id, @invoiceNumber, @customerId, @date, @total)');
+
+        for (const item of sale.items) {
+            const itemRequest = new sql.Request(transaction);
+            await itemRequest
+                .input('saleId', sql.VarChar, saleId)
+                .input('productId', sql.VarChar, item.productId)
+                .input('quantity', sql.Int, item.quantity)
+                .input('unitPrice', sql.Decimal(10, 2), item.unitPrice)
+                .input('subtotal', sql.Decimal(10, 2), item.subtotal)
+                .query('INSERT INTO SaleItems (saleId, productId, quantity, unitPrice, subtotal) VALUES (@saleId, @productId, @quantity, @unitPrice, @subtotal)');
+            
+            const stockRequest = new sql.Request(transaction);
+            await stockRequest
+                .input('quantity', sql.Int, item.quantity)
+                .input('productId', sql.VarChar, item.productId)
+                .query('UPDATE Products SET stock = stock - @quantity WHERE id = @productId');
         }
-    });
+        
+        await transaction.commit();
 
-    sales.unshift(newSale);
-    return newSale;
+        const newSale: Sale = { ...sale, id: saleId, invoiceNumber: newInvoiceNumber };
+        return newSale;
+
+    } catch (err) {
+        await transaction.rollback();
+        throw err;
+    }
 };
 
 // Dashboard data
 export const getDashboardStats = async () => {
-    await delay(150);
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const startOfWeek = new Date(today);
-    startOfWeek.setDate(today.getDate() - today.getDay());
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const request = await getRequest();
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-    const dailySales = sales.filter(s => new Date(s.date) >= today).reduce((sum, s) => sum + s.total, 0);
-    const weeklySales = sales.filter(s => new Date(s.date) >= startOfWeek).reduce((sum, s) => sum + s.total, 0);
-    const monthlySales = sales.filter(s => new Date(s.date) >= startOfMonth).reduce((sum, s) => sum + s.total, 0);
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
-    const totalCustomers = customers.length;
-    const lowStockProducts = products.filter(p => p.stock < 5).length;
+    const dailySalesResult = await request.input('today', sql.DateTime, today).query('SELECT SUM(total) as total FROM Sales WHERE date >= @today');
+    const monthlySalesResult = await request.input('startOfMonth', sql.DateTime, startOfMonth).query('SELECT SUM(total) as total FROM Sales WHERE date >= @startOfMonth');
+    const totalCustomersResult = await request.query('SELECT COUNT(*) as total FROM Customers');
+    const lowStockProductsResult = await request.query('SELECT COUNT(*) as total FROM Products WHERE stock < 5');
 
-    return { dailySales, weeklySales, monthlySales, totalCustomers, lowStockProducts };
+    return {
+        dailySales: dailySalesResult.recordset[0].total || 0,
+        monthlySales: monthlySalesResult.recordset[0].total || 0,
+        totalCustomers: totalCustomersResult.recordset[0].total || 0,
+        lowStockProducts: lowStockProductsResult.recordset[0].total || 0,
+    };
 };
 
 export const getWeeklySalesData = async () => {
-    await delay(200);
+    const request = await getRequest();
     const salesData = [];
     const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     for (let i = 6; i >= 0; i--) {
         const date = new Date(today);
         date.setDate(today.getDate() - i);
-        const dayStart = new Date(date.setHours(0,0,0,0));
-        const dayEnd = new Date(date.setHours(23,59,59,999));
         
-        const total = sales
-            .filter(s => {
-                const saleDate = new Date(s.date);
-                return saleDate >= dayStart && saleDate <= dayEnd;
-            })
-            .reduce((sum, s) => sum + s.total, 0);
-        
+        const result = await request
+            .input('dayStart', sql.DateTime, date)
+            .input('dayEnd', sql.DateTime, new Date(date.getTime() + 24 * 60 * 60 * 1000))
+            .query('SELECT SUM(total) as total FROM Sales WHERE date >= @dayStart AND date < @dayEnd');
+
         salesData.push({
-            name: dayStart.toLocaleDateString('en-US', { weekday: 'short' }),
-            total,
+            name: date.toLocaleDateString('en-US', { weekday: 'short' }),
+            total: result.recordset[0].total || 0,
         });
     }
     return salesData;
 };
 
+
 export const getTopSellingProducts = async (limit = 5) => {
-    await delay(250);
-    const productSales = new Map<string, { name: string; imageUrl: string; quantity: number }>();
-
-    sales.forEach(sale => {
-        sale.items.forEach(item => {
-            const product = products.find(p => p.id === item.productId);
-            if(product) {
-                const existing = productSales.get(item.productId) || { name: product.name, imageUrl: product.imageUrl, quantity: 0 };
-                productSales.set(item.productId, { ...existing, quantity: existing.quantity + item.quantity });
-            }
-        });
-    });
-
-    return Array.from(productSales.values())
-        .sort((a, b) => b.quantity - a.quantity)
-        .slice(0, limit);
+    const request = await getRequest();
+    const result = await request
+        .input('limit', sql.Int, limit)
+        .query(`
+            SELECT TOP (@limit)
+                p.name,
+                p.imageUrl,
+                SUM(si.quantity) as quantity
+            FROM SaleItems si
+            JOIN Products p ON si.productId = p.id
+            GROUP BY p.name, p.imageUrl
+            ORDER BY quantity DESC
+        `);
+    return result.recordset;
 };
