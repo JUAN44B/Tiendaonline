@@ -1,4 +1,3 @@
-
 "use client";
 
 import type { Sale, Customer } from "@/lib/definitions";
@@ -6,11 +5,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/componen
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
-import { Printer, Store } from "lucide-react";
+import { Printer } from "lucide-react";
 import Image from "next/image";
 import React, { useRef, useState, useEffect } from "react";
 import { useReactToPrint } from "react-to-print";
 import Link from "next/link";
+import { CompanyLogo } from "../icons/company-logo";
 
 interface SaleTicketProps {
   sale: Sale;
@@ -55,8 +55,7 @@ const PrintableTicket = React.forwardRef<HTMLDivElement, SaleTicketProps>(({ sal
             <Card className="font-mono text-sm mx-auto w-[320px] shadow-none border-none bg-white text-black">
                 <CardHeader className="text-center p-4">
                     <div className="flex justify-center items-center gap-2 mb-2">
-                        <Store className="h-8 w-8 text-primary" />
-                        <CardTitle className="text-xl font-bold">SwiftPOS</CardTitle>
+                        <CompanyLogo className="h-16 w-auto" />
                     </div>
                     <p className="text-xs">123 Market St, San Francisco, CA</p>
                     <p className="text-xs">Tel: (123) 456-7890</p>
@@ -145,8 +144,15 @@ export default function SaleTicket({ sale, customer, productMap }: SaleTicketPro
                 Imprimir Ticket
             </Button>
         </div>
+        <div style={{ display: "none" }}>
+            <PrintableTicket
+                ref={componentRef}
+                sale={sale}
+                customer={customer}
+                productMap={productMap}
+            />
+        </div>
         <PrintableTicket
-            ref={componentRef}
             sale={sale}
             customer={customer}
             productMap={productMap}

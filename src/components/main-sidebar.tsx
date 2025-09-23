@@ -9,7 +9,6 @@ import {
   Users,
   Receipt,
   Folder,
-  Store,
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -19,6 +18,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { CompanyLogo } from './icons/company-logo';
 
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -34,10 +34,10 @@ export function MainSidebar() {
 
   return (
     <aside className="flex h-screen w-16 flex-col items-center border-r bg-card">
-      <div className="flex h-16 w-full items-center justify-center border-b">
+      <div className="flex h-16 w-full items-center justify-center border-b p-2">
         <Link href="/dashboard">
-          <Store className="h-7 w-7 text-primary" />
-          <span className="sr-only">SwiftPOS</span>
+          <CompanyLogo className="h-full w-full" />
+          <span className="sr-only">Aliru</span>
         </Link>
       </div>
       <nav className="flex flex-1 flex-col items-center gap-2 py-4">
