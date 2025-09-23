@@ -1,4 +1,8 @@
 import sql from 'mssql';
+import { config as dotenvConfig } from 'dotenv';
+
+// Force load environment variables
+dotenvConfig({ path: '.env' });
 
 const config = {
     user: process.env.DB_USER,
