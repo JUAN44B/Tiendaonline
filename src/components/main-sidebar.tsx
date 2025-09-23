@@ -33,8 +33,8 @@ export function MainSidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="flex h-screen w-16 flex-col items-center border-r bg-card">
-      <div className="flex h-16 w-full items-center justify-center border-b p-2">
+    <aside className="flex h-screen w-20 flex-col items-center border-r bg-card">
+      <div className="flex h-20 w-full items-center justify-center border-b p-2">
         <Link href="/dashboard">
           <CompanyLogo className="h-full w-full" />
           <span className="sr-only">Aliru</span>

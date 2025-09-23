@@ -55,7 +55,7 @@ const PrintableTicket = React.forwardRef<HTMLDivElement, SaleTicketProps>(({ sal
             <Card className="font-mono text-sm mx-auto w-[320px] shadow-none border-none bg-white text-black">
                 <CardHeader className="text-center p-4">
                     <div className="flex justify-center items-center gap-2 mb-2">
-                        <CompanyLogo className="h-16 w-auto" />
+                        <CompanyLogo className="h-20 w-auto" />
                     </div>
                     <p className="text-xs">123 Market St, San Francisco, CA</p>
                     <p className="text-xs">Tel: (123) 456-7890</p>
@@ -144,7 +144,7 @@ export default function SaleTicket({ sale, customer, productMap }: SaleTicketPro
                 Imprimir Ticket
             </Button>
         </div>
-        <div style={{ display: "none" }}>
+        <div className="hidden">
             <PrintableTicket
                 ref={componentRef}
                 sale={sale}
