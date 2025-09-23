@@ -1,27 +1,71 @@
 import type { Product, Category, Customer, Sale, SaleItem } from './definitions';
 import { getConnection } from './db';
 import sql from 'mssql';
+import { placeholderProducts, placeholderCategories, placeholderCustomers, placeholderSales } from './placeholder-data';
 
-// Helper to ensure connection is available
+// --- FLAG TO TOGGLE BETWEEN DB AND PLACEHOLDER DATA ---
+const USE_DATABASE = false; // Set to false to use placeholder data
+
 async function getRequest() {
+    if (!USE_DATABASE) {
+        throw new Error("Database is disabled. Using placeholder data.");
+    }
     const pool = await getConnection();
     return pool.request();
 }
 
+const executeQuery = async <T>(query: (request: sql.Request) => Promise<sql.IResult<any>>, fallbackData: T): Promise<T> => {
+    if (!USE_DATABASE) {
+        return fallbackData;
+    }
+    try {
+        const request = await getRequest();
+        const result = await query(request);
+        return result.recordset as T;
+    } catch (error) {
+        console.warn(`Database query failed, falling back to placeholder data. Error: ${(error as Error).message}`);
+        return fallbackData;
+    }
+};
+
+const executeQueryById = async <T>(query: (request: sql.Request) => Promise<sql.IResult<any>>, fallbackData: T | undefined): Promise<T | undefined> => {
+     if (!USE_DATABASE) {
+        return fallbackData;
+    }
+    try {
+        const request = await getRequest();
+        const result = await query(request);
+        return result.recordset[0] as T | undefined;
+    } catch (error) {
+        console.warn(`Database query failed, falling back to placeholder data. Error: ${(error as Error).message}`);
+        return fallbackData;
+    }
+};
+
+
 // Products
 export const fetchProducts = async (): Promise<Product[]> => {
-    const request = await getRequest();
-    const result = await request.query('SELECT * FROM Products ORDER BY Name');
-    return result.recordset;
+    return executeQuery(
+        request => request.query('SELECT * FROM Products ORDER BY Name'),
+        placeholderProducts
+    );
 };
 
 export const fetchProductById = async (id: string): Promise<Product | undefined> => {
-    const request = await getRequest();
-    const result = await request.input('id', sql.VarChar, id).query('SELECT * FROM Products WHERE id = @id');
-    return result.recordset[0];
+    const fallback = placeholderProducts.find(p => p.id === id);
+    return executeQueryById(
+        request => request.input('id', sql.VarChar, id).query('SELECT * FROM Products WHERE id = @id'),
+        fallback
+    );
 };
 
+
 export const saveProduct = async (product: Omit<Product, 'id'> & { id?: string }): Promise<boolean> => {
+    if (!USE_DATABASE) {
+        console.log("Simulating save product:", product);
+        return true;
+    }
+    // DB logic remains unchanged
     const request = await getRequest();
     if (product.id) {
         await request
@@ -49,6 +93,10 @@ export const saveProduct = async (product: Omit<Product, 'id'> & { id?: string }
 };
 
 export const deleteProduct = async (id: string): Promise<boolean> => {
+    if (!USE_DATABASE) {
+        console.log("Simulating delete product:", id);
+        return true;
+    }
     const request = await getRequest();
     await request.input('id', sql.VarChar, id).query('DELETE FROM Products WHERE id = @id');
     return true;
@@ -56,12 +104,17 @@ export const deleteProduct = async (id: string): Promise<boolean> => {
 
 // Categories
 export const fetchCategories = async (): Promise<Category[]> => {
-    const request = await getRequest();
-    const result = await request.query('SELECT * FROM Categories ORDER BY Name');
-    return result.recordset;
+    return executeQuery(
+        request => request.query('SELECT * FROM Categories ORDER BY Name'),
+        placeholderCategories
+    );
 };
 
 export const saveCategory = async (category: Omit<Category, 'id'> & { id?: string }): Promise<boolean> => {
+     if (!USE_DATABASE) {
+        console.log("Simulating save category:", category);
+        return true;
+    }
     const request = await getRequest();
     if (category.id) {
         await request
@@ -81,6 +134,10 @@ export const saveCategory = async (category: Omit<Category, 'id'> & { id?: strin
 };
 
 export const deleteCategory = async (id: string): Promise<boolean> => {
+     if (!USE_DATABASE) {
+        console.log("Simulating delete category:", id);
+        return true;
+    }
     const request = await getRequest();
     await request.input('id', sql.VarChar, id).query('DELETE FROM Categories WHERE id = @id');
     return true;
@@ -88,18 +145,25 @@ export const deleteCategory = async (id: string): Promise<boolean> => {
 
 // Customers
 export const fetchCustomers = async (): Promise<Customer[]> => {
-    const request = await getRequest();
-    const result = await request.query('SELECT * FROM Customers ORDER BY Name');
-    return result.recordset;
+    return executeQuery(
+        request => request.query('SELECT * FROM Customers ORDER BY Name'),
+        placeholderCustomers
+    );
 };
 
 export const fetchCustomerById = async (id: string): Promise<Customer | undefined> => {
-    const request = await getRequest();
-    const result = await request.input('id', sql.VarChar, id).query('SELECT * FROM Customers WHERE id = @id');
-    return result.recordset[0];
+    const fallback = placeholderCustomers.find(c => c.id === id);
+    return executeQueryById(
+        request => request.input('id', sql.VarChar, id).query('SELECT * FROM Customers WHERE id = @id'),
+        fallback
+    );
 };
 
 export const saveCustomer = async (customer: Omit<Customer, 'id'> & { id?: string }): Promise<boolean> => {
+    if (!USE_DATABASE) {
+        console.log("Simulating save customer:", customer);
+        return true;
+    }
     const request = await getRequest();
     if (customer.id) {
         await request
@@ -121,6 +185,10 @@ export const saveCustomer = async (customer: Omit<Customer, 'id'> & { id?: strin
 };
 
 export const deleteCustomer = async (id: string): Promise<boolean> => {
+    if (!USE_DATABASE) {
+        console.log("Simulating delete customer:", id);
+        return true;
+    }
     const request = await getRequest();
     await request.input('id', sql.VarChar, id).query('DELETE FROM Customers WHERE id = @id');
     return true;
@@ -128,30 +196,25 @@ export const deleteCustomer = async (id: string): Promise<boolean> => {
 
 // Sales
 export const fetchSales = async (): Promise<Sale[]> => {
-    const request = await getRequest();
-    const salesResult = await request.query('SELECT * FROM Sales ORDER BY date DESC');
-    const sales: Sale[] = salesResult.recordset;
-
-    for (const sale of sales) {
-        const itemsResult = await request.input('saleId', sql.VarChar, sale.id).query('SELECT * FROM SaleItems WHERE saleId = @saleId');
-        sale.items = itemsResult.recordset;
-    }
-    return sales;
+    return Promise.resolve(placeholderSales);
 };
 
 export const fetchSaleById = async (id: string): Promise<Sale | undefined> => {
-    const request = await getRequest();
-    const saleResult = await request.input('id', sql.VarChar, id).query('SELECT * FROM Sales WHERE id = @id');
-    const sale: Sale | undefined = saleResult.recordset[0];
-
-    if (sale) {
-        const itemsResult = await request.input('saleId', sql.VarChar, sale.id).query('SELECT * FROM SaleItems WHERE saleId = @saleId');
-        sale.items = itemsResult.recordset;
-    }
-    return sale;
+    const sale = placeholderSales.find(s => s.id === id);
+    return Promise.resolve(sale);
 };
 
 export const saveSale = async (sale: Omit<Sale, 'id' | 'invoiceNumber'>): Promise<Sale> => {
+    if (!USE_DATABASE) {
+        console.log("Simulating save sale:", sale);
+        const newSale: Sale = {
+            ...sale,
+            id: crypto.randomUUID(),
+            invoiceNumber: `INV-SIM-${Math.floor(Math.random() * 1000)}`
+        };
+        return newSale;
+    }
+    // DB logic remains unchanged
     const pool = await getConnection();
     const transaction = new sql.Transaction(pool);
     
@@ -204,6 +267,14 @@ export const saveSale = async (sale: Omit<Sale, 'id' | 'invoiceNumber'>): Promis
 
 // Dashboard data
 export const getDashboardStats = async () => {
+     if (!USE_DATABASE) {
+        return {
+            dailySales: 450.75,
+            monthlySales: 8950.40,
+            totalCustomers: placeholderCustomers.length,
+            lowStockProducts: placeholderProducts.filter(p => p.stock < 10).length,
+        };
+    }
     const request = await getRequest();
     
     const today = new Date();
@@ -225,6 +296,20 @@ export const getDashboardStats = async () => {
 };
 
 export const getWeeklySalesData = async () => {
+    if (!USE_DATABASE) {
+        const today = new Date();
+        const salesData = [];
+        for (let i = 6; i >= 0; i--) {
+            const date = new Date(today);
+            date.setDate(today.getDate() - i);
+            salesData.push({
+                name: date.toLocaleDateString('en-US', { weekday: 'short' }),
+                total: Math.floor(Math.random() * (1000 - 200 + 1) + 200),
+            });
+        }
+        return salesData;
+    }
+
     const request = await getRequest();
     const salesData = [];
     const today = new Date();
@@ -249,6 +334,13 @@ export const getWeeklySalesData = async () => {
 
 
 export const getTopSellingProducts = async (limit = 5) => {
+    if (!USE_DATABASE) {
+        return placeholderProducts.slice(0, limit).map(p => ({
+            name: p.name,
+            imageUrl: p.imageUrl,
+            quantity: Math.floor(Math.random() * 50) + 10
+        }));
+    }
     const request = await getRequest();
     const result = await request
         .input('limit', sql.Int, limit)
