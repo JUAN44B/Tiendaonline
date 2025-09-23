@@ -196,12 +196,42 @@ export const deleteCustomer = async (id: string): Promise<boolean> => {
 
 // Sales
 export const fetchSales = async (): Promise<Sale[]> => {
-    return Promise.resolve(placeholderSales);
+    return executeQuery(
+        request => request.query(`
+            SELECT 
+                s.id, s.invoiceNumber, s.customerId, s.date, s.total,
+                (SELECT 
+                    si.productId, si.quantity, si.unitPrice, si.subtotal
+                 FROM SaleItems si WHERE si.saleId = s.id FOR JSON PATH) as items
+            FROM Sales s 
+            ORDER BY s.date DESC
+        `),
+        placeholderSales
+    );
 };
 
 export const fetchSaleById = async (id: string): Promise<Sale | undefined> => {
-    const sale = placeholderSales.find(s => s.id === id);
-    return Promise.resolve(sale);
+    const fallback = placeholderSales.find(s => s.id === id);
+    const sale = await executeQueryById<{id: string, invoiceNumber: string, customerId: string, date: string, total: number, items: string}>(
+         request => request.input('id', sql.VarChar, id).query(`
+            SELECT 
+                s.id, s.invoiceNumber, s.customerId, s.date, s.total,
+                (SELECT 
+                    si.productId, si.quantity, si.unitPrice, si.subtotal
+                 FROM SaleItems si WHERE si.saleId = s.id FOR JSON PATH) as items
+            FROM Sales s 
+            WHERE s.id = @id
+        `),
+        fallback ? {...fallback, items: JSON.stringify(fallback.items)} : undefined
+    );
+    
+    if (sale) {
+        return {
+            ...sale,
+            items: JSON.parse(sale.items || '[]')
+        }
+    }
+    return undefined;
 };
 
 export const saveSale = async (sale: Omit<Sale, 'id' | 'invoiceNumber'>): Promise<Sale> => {
@@ -222,7 +252,7 @@ export const saveSale = async (sale: Omit<Sale, 'id' | 'invoiceNumber'>): Promis
         await transaction.begin();
 
         const invRequest = new sql.Request(transaction);
-        const lastInvoiceResult = await invRequest.query("SELECT TOP 1 invoiceNumber FROM Sales ORDER BY invoiceNumber DESC");
+        const lastInvoiceResult = await invRequest.query("SELECT TOP 1 invoiceNumber FROM Sales ORDER BY date DESC");
         const lastInvoiceNumber = lastInvoiceResult.recordset[0]?.invoiceNumber || 'INV-000';
         const newInvoiceNum = parseInt(lastInvoiceNumber.split('-')[1]) + 1;
         const newInvoiceNumber = `INV-${String(newInvoiceNum).padStart(3, '0')}`;
@@ -285,7 +315,7 @@ export const getDashboardStats = async () => {
     const dailySalesResult = await request.input('today', sql.DateTime, today).query('SELECT SUM(total) as total FROM Sales WHERE date >= @today');
     const monthlySalesResult = await request.input('startOfMonth', sql.DateTime, startOfMonth).query('SELECT SUM(total) as total FROM Sales WHERE date >= @startOfMonth');
     const totalCustomersResult = await request.query('SELECT COUNT(*) as total FROM Customers');
-    const lowStockProductsResult = await request.query('SELECT COUNT(*) as total FROM Products WHERE stock < 5');
+    const lowStockProductsResult = await request.query('SELECT COUNT(*) as total FROM Products WHERE stock < 10');
 
     return {
         dailySales: dailySalesResult.recordset[0].total || 0,

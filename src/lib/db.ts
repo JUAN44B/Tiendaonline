@@ -5,14 +5,16 @@ import { config as dotenvConfig } from 'dotenv';
 // Force load environment variables
 dotenvConfig({ path: '.env' });
 
-const config = {
-    server: process.env.DB_SERVER || 'localhost\\SQLEXPRESS',
+const config: sql.config = {
+    server: process.env.DB_SERVER!,
     database: process.env.DB_DATABASE,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
     options: {
         encrypt: process.env.DB_ENCRYPT === 'true', 
-        trustServerCertificate: process.env.DB_TRUST_SERVER_CERTIFICATE === 'true',
-        integratedSecurity: true,
-    }
+        trustServerCertificate: true, // Explicitly set for local dev
+        instanceName: process.env.DB_INSTANCE_NAME,
+    },
 };
 
 let pool: sql.ConnectionPool | null = null;
