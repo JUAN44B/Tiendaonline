@@ -1,4 +1,5 @@
 
+
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -15,6 +16,7 @@ import StatsCards from "@/components/dashboard/stats-cards";
 import RecentSales from "@/components/dashboard/recent-sales";
 import TopProducts from "@/components/dashboard/top-products";
 import SalesChart from "@/components/dashboard/sales-chart";
+import { getWeeklySalesData } from "@/lib/data";
 
 const quickLinks = [
   {
@@ -69,7 +71,9 @@ const quickLinks = [
   },
 ];
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const weeklySalesData = await getWeeklySalesData();
+
   return (
     <div>
       <PageHeader
@@ -86,7 +90,7 @@ export default function DashboardPage() {
               <CardTitle>Ventas de la Última Semana</CardTitle>
             </CardHeader>
             <CardContent>
-              <SalesChart />
+              <SalesChart data={weeklySalesData} />
             </CardContent>
           </Card>
           <Card>

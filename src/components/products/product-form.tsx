@@ -5,7 +5,9 @@ import { useRouter } from 'next/navigation';
 import { Wand2, Loader2 } from 'lucide-react';
 
 import type { Product, Category } from '@/lib/definitions';
-import { saveProductAction, generateDescriptionAction } from '@/lib/actions';
+import { saveProductAction } from '@/lib/actions';
+import { generateDescriptionAction } from '@/app/actions/ai';
+
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';

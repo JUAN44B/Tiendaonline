@@ -1,27 +1,21 @@
 'use client';
 
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { useEffect, useState } from 'react';
-import { getWeeklySalesData } from '@/lib/data';
 
 type SalesData = {
     name: string;
     total: number;
 };
 
-export default function SalesChart() {
-  const [salesData, setSalesData] = useState<SalesData[]>([]);
-  
-  useEffect(() => {
-    // This is now a server action, but we call it in useEffect to keep it a client component
-    // In a real app, you might use a library like SWR or React Query
-    getWeeklySalesData().then(data => setSalesData(data));
-  }, []);
+interface SalesChartProps {
+  data: SalesData[];
+}
 
+export default function SalesChart({ data }: SalesChartProps) {
   return (
     <div className="h-[300px]">
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={salesData}>
+        <BarChart data={data}>
           <CartesianGrid strokeDasharray="3 3" vertical={false} />
           <XAxis
             dataKey="name"

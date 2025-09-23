@@ -4,7 +4,6 @@ import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { saveProduct, deleteProduct, saveCategory, deleteCategory, saveCustomer, deleteCustomer, saveSale } from './data';
-import { generateProductDescription } from '@/ai/flows/generate-product-description';
 import type { Sale } from './definitions';
 
 const productSchema = z.object({
@@ -103,18 +102,4 @@ export async function createSaleAction(saleData: Omit<Sale, 'id' | 'invoiceNumbe
     revalidatePath('/products');
     revalidatePath('/dashboard');
     return { success: true, sale: newSale };
-}
-
-
-export async function generateDescriptionAction(productName: string) {
-  if (!productName) {
-    return { error: 'Product name is required.' };
-  }
-  try {
-    const result = await generateProductDescription({ productName });
-    return { description: result.productDescription };
-  } catch (error) {
-    console.error('AI Error:', error);
-    return { error: 'Failed to generate description.' };
-  }
 }
