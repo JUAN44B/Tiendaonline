@@ -1,9 +1,11 @@
+
 import PosInterface from "@/components/pos/pos-interface";
 import { PageHeader } from "@/components/page-header";
 import { fetchProducts, fetchCustomers } from "@/lib/data";
 
 export default async function PosPage() {
-    const [products, customers] = await Promise.all([fetchProducts(), fetchCustomers()]);
+    const products = await fetchProducts();
+    const customers = await fetchCustomers();
 
     return (
         <div className="h-[calc(100vh-4rem)] flex flex-col">
