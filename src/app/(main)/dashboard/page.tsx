@@ -1,3 +1,4 @@
+
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -9,6 +10,11 @@ import {
   PlusCircle,
 } from "lucide-react";
 import Link from "next/link";
+import { Suspense } from "react";
+import StatsCards from "@/components/dashboard/stats-cards";
+import RecentSales from "@/components/dashboard/recent-sales";
+import TopProducts from "@/components/dashboard/top-products";
+import SalesChart from "@/components/dashboard/sales-chart";
 
 const quickLinks = [
   {
@@ -68,30 +74,65 @@ export default function DashboardPage() {
     <div>
       <PageHeader
         title="Panel de Control"
-        description="Accesos rápidos a las funciones principales de tu negocio."
+        description="Un resumen de la actividad de tu negocio."
       />
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {quickLinks.map((section) => (
-          <Card key={section.title}>
+      <div className="space-y-6">
+        <Suspense fallback={<StatsCards.Skeleton />}>
+          <StatsCards />
+        </Suspense>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <Card className="lg:col-span-2">
             <CardHeader>
-              <CardTitle>{section.title}</CardTitle>
+              <CardTitle>Ventas de la Última Semana</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 gap-4">
-                {section.links.map((link) => (
-                  <Link
-                    key={link.label}
-                    href={link.href}
-                    className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg bg-muted hover:bg-accent hover:text-accent-foreground transition-colors"
-                  >
-                    <link.icon className="h-8 w-8" />
-                    <span className="text-sm font-medium text-center">{link.label}</span>
-                  </Link>
-                ))}
-              </div>
+              <SalesChart />
             </CardContent>
           </Card>
-        ))}
+          <Card>
+            <CardHeader>
+              <CardTitle>Ventas Recientes</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Suspense fallback={<RecentSales.Skeleton />}>
+                <RecentSales />
+              </Suspense>
+            </CardContent>
+          </Card>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+           <Card className="md:col-span-2 lg:col-span-1">
+            <CardHeader>
+                <CardTitle>Productos Más Vendidos</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <Suspense fallback={<TopProducts.Skeleton />}>
+                    <TopProducts />
+                </Suspense>
+            </CardContent>
+           </Card>
+          {quickLinks.map((section) => (
+            <Card key={section.title}>
+              <CardHeader>
+                <CardTitle>{section.title}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4">
+                  {section.links.map((link) => (
+                    <Link
+                      key={link.label}
+                      href={link.href}
+                      className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg bg-muted hover:bg-accent hover:text-accent-foreground transition-colors"
+                    >
+                      <link.icon className="h-8 w-8" />
+                      <span className="text-sm font-medium text-center">{link.label}</span>
+                    </Link>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
     </div>
   );
