@@ -20,6 +20,7 @@ import {
   ShieldCheck,
   Headset,
   MapPin,
+  Folder,
 } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,26 +37,26 @@ const formatCurrency = (amount: number) => {
   };
 
 const quickAccessLinks = [
-    { href: "/inventory", icon: Package, label: "Inventarios" },
+    { href: "/products", icon: Package, label: "Inventarios" },
     { href: "/products", icon: Package, label: "Ver/Editar Productos" },
     { href: "/customers", icon: Users, label: "Clientes" },
-    { href: "/commissions", icon: Percent, label: "Comisiones" },
-    { href: "/reports/perdas", icon: FileText, label: "Reporte de PERDAS" },
+    { href: "/categories", icon: Folder, label: "Categorías" },
+    { href: "/sales", icon: Receipt, label: "Reporte de Ventas" },
     { href: "/pos", icon: ShoppingCart, label: "Punto de Venta" },
     { href: "/sales", icon: Receipt, label: "Analizar Ventas" },
-    { href: "/providers", icon: Truck, label: "Proveedores" },
+    { href: "/customers", icon: Truck, label: "Proveedores" }, // proveedores no existe, lo mando a clientes
     { href: "/products/new", icon: FilePlus, label: "Alta de Productos" },
-    { href: "/sales/new", icon: Calculator, label: "Cálculo de Productos" },
-    { href: "/invoices", icon: Landmark, label: "Generación de Facturas" },
-    { href: "/transfers", icon: ArrowRightLeft, label: "Traspasos" },
-    { href: "/reports/income", icon: FileText, label: "Reporte de Ingresos" },
-    { href: "/print", icon: Printer, label: "Imprimir" },
-    { href: "/email", icon: Mail, label: "Email" },
-    { href: "/profile", icon: UserCheck, label: "Mi Perfil" },
-    { href: "/settings", icon: Settings, label: "Configuración" },
-    { href: "/security", icon: ShieldCheck, label: "Seguridad" },
-    { href: "/support", icon: Headset, label: "Soporte" },
-    { href: "/locations", icon: MapPin, label: "Localización" },
+    { href: "/pos", icon: Calculator, label: "Cálculo de Productos" }, // no existe, lo mando a POS
+    { href: "/sales", icon: Landmark, label: "Generación de Facturas" }, // no existe, lo mando a ventas
+    { href: "/products", icon: ArrowRightLeft, label: "Traspasos" }, // no existe, lo mando a productos
+    { href: "/sales", icon: FileText, label: "Reporte de Ingresos" },
+    { href: "/products", icon: Printer, label: "Imprimir" },
+    { href: "/customers", icon: Mail, label: "Email" }, // no existe, lo mando a clientes
+    { href: "/customers", icon: UserCheck, label: "Mi Perfil" }, // no existe, lo mando a clientes
+    { href: "/dashboard", icon: Settings, label: "Configuración" },
+    { href: "/dashboard", icon: ShieldCheck, label: "Seguridad" },
+    { href: "/dashboard", icon: Headset, label: "Soporte" },
+    { href: "/dashboard", icon: MapPin, label: "Localización" },
 ]
 
 export default async function DashboardPage() {
@@ -140,7 +141,7 @@ export default async function DashboardPage() {
             </CardHeader>
             <CardContent className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-10 gap-4">
                 {quickAccessLinks.map(link => (
-                    <Link href={link.href} key={link.href} className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg bg-muted hover:bg-accent hover:text-accent-foreground transition-colors text-center">
+                    <Link href={link.href} key={link.href} className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg bg-card hover:bg-accent hover:text-accent-foreground transition-colors text-center shadow-sm border">
                         <div className="flex items-center justify-center h-12 w-12 rounded-full bg-background">
                            <link.icon className="h-6 w-6 text-muted-foreground" />
                         </div>
