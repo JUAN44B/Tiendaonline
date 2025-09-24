@@ -12,7 +12,6 @@ import {
   Mail,
   UserCheck,
   Calculator,
-  Percent,
   Landmark,
   FilePlus,
   ArrowRightLeft,
@@ -21,6 +20,8 @@ import {
   Headset,
   MapPin,
   Folder,
+  Archive,
+  AreaChart,
 } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -37,26 +38,24 @@ const formatCurrency = (amount: number) => {
   };
 
 const quickAccessLinks = [
-    { href: "/products", icon: Package, label: "Inventarios" },
+    { href: "/products", icon: Archive, label: "Inventarios" },
     { href: "/products", icon: Package, label: "Ver/Editar Productos" },
     { href: "/customers", icon: Users, label: "Clientes" },
     { href: "/categories", icon: Folder, label: "Categorías" },
     { href: "/sales", icon: Receipt, label: "Reporte de Ventas" },
     { href: "/pos", icon: ShoppingCart, label: "Punto de Venta" },
-    { href: "/sales", icon: Receipt, label: "Analizar Ventas" },
-    { href: "/customers", icon: Truck, label: "Proveedores" }, // proveedores no existe, lo mando a clientes
+    { href: "/sales", icon: AreaChart, label: "Analizar Ventas" },
+    { href: "/customers", icon: Truck, label: "Proveedores" },
     { href: "/products/new", icon: FilePlus, label: "Alta de Productos" },
-    { href: "/pos", icon: Calculator, label: "Cálculo de Productos" }, // no existe, lo mando a POS
-    { href: "/sales", icon: Landmark, label: "Generación de Facturas" }, // no existe, lo mando a ventas
-    { href: "/products", icon: ArrowRightLeft, label: "Traspasos" }, // no existe, lo mando a productos
+    { href: "/pos", icon: Calculator, label: "Cálculo de Productos" },
+    { href: "/sales", icon: Landmark, label: "Generación de Facturas" },
+    { href: "/products", icon: ArrowRightLeft, label: "Traspasos" },
     { href: "/sales", icon: FileText, label: "Reporte de Ingresos" },
     { href: "/products", icon: Printer, label: "Imprimir" },
-    { href: "/customers", icon: Mail, label: "Email" }, // no existe, lo mando a clientes
-    { href: "/customers", icon: UserCheck, label: "Mi Perfil" }, // no existe, lo mando a clientes
+    { href: "/customers", icon: Mail, label: "Email" },
+    { href: "/customers", icon: UserCheck, label: "Mi Perfil" },
     { href: "/dashboard", icon: Settings, label: "Configuración" },
     { href: "/dashboard", icon: ShieldCheck, label: "Seguridad" },
-    { href: "/dashboard", icon: Headset, label: "Soporte" },
-    { href: "/dashboard", icon: MapPin, label: "Localización" },
 ]
 
 export default async function DashboardPage() {
