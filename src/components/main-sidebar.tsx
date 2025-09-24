@@ -42,7 +42,7 @@ export function MainSidebar() {
 
   return (
     <aside className="flex h-screen w-64 flex-col border-r bg-sidebar text-sidebar-foreground">
-      <div className="flex h-16 items-center justify-center p-4">
+      <div className="flex h-24 items-center justify-center p-4">
         <Link href="/dashboard" className="flex items-center gap-2">
           <CompanyLogo className="h-10 w-auto" />
         </Link>
