@@ -1,16 +1,17 @@
 "use client";
 
 import type { Sale, Customer } from "@/lib/definitions";
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
-import { Printer } from "lucide-react";
+import { FileDown, Loader2 } from "lucide-react";
 import Image from "next/image";
 import React, { useRef, useState, useEffect } from "react";
-import { useReactToPrint } from "react-to-print";
 import Link from "next/link";
 import { CompanyLogo } from "../icons/company-logo";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 
 interface SaleTicketProps {
   sale: Sale;
@@ -18,7 +19,7 @@ interface SaleTicketProps {
   productMap: Map<string, string>;
 }
 
-// Create a new component that can be referenced for printing
+// Create a new component that can be referenced for printing/pdf generation
 const PrintableTicket = React.forwardRef<HTMLDivElement, SaleTicketProps>(({ sale, customer, productMap }, ref) => {
     const [qrCodeUrl, setQrCodeUrl] = useState('');
     const [formattedDate, setFormattedDate] = useState('');
@@ -51,7 +52,7 @@ const PrintableTicket = React.forwardRef<HTMLDivElement, SaleTicketProps>(({ sal
     const tax = sale.total - subtotal;
 
     return (
-        <div ref={ref} className="p-2">
+        <div ref={ref} className="p-2 bg-white">
             <Card className="font-mono text-sm mx-auto w-[320px] shadow-none border-none bg-white text-black">
                 <CardHeader className="text-center p-4">
                     <div className="flex justify-center items-center gap-2 mb-2">
@@ -127,11 +128,39 @@ PrintableTicket.displayName = 'PrintableTicket';
 
 export default function SaleTicket({ sale, customer, productMap }: SaleTicketProps) {
     const componentRef = useRef<HTMLDivElement>(null);
+    const [isDownloading, setIsDownloading] = useState(false);
 
-    const handlePrint = useReactToPrint({
-        content: () => componentRef.current,
-        documentTitle: `Ticket-${sale.invoiceNumber}`,
-    });
+    const handleDownloadPdf = async () => {
+        const ticketElement = componentRef.current;
+        if (!ticketElement) return;
+
+        setIsDownloading(true);
+
+        try {
+            const canvas = await html2canvas(ticketElement, {
+                scale: 2, // Aumenta la resolución de la imagen
+                useCORS: true,
+            });
+            const imgData = canvas.toDataURL('image/png');
+
+            // Tamaño del ticket de 80mm
+            const pdf = new jsPDF({
+                orientation: 'portrait',
+                unit: 'mm',
+                format: [80, 297] // Ancho de 80mm, altura de una hoja A4 para que quepa
+            });
+
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+            
+            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, imgHeight);
+            pdf.save(`Ticket-${sale.invoiceNumber}.pdf`);
+        } catch (error) {
+            console.error("Error al generar el PDF:", error);
+        } finally {
+            setIsDownloading(false);
+        }
+    };
 
   return (
     <div className="w-full max-w-md">
@@ -139,12 +168,16 @@ export default function SaleTicket({ sale, customer, productMap }: SaleTicketPro
              <Button variant="outline" asChild>
                 <Link href="/pos">Nueva Venta</Link>
             </Button>
-            <Button onClick={handlePrint}>
-                <Printer className="mr-2 h-4 w-4" />
-                Imprimir Ticket
+            <Button onClick={handleDownloadPdf} disabled={isDownloading}>
+                {isDownloading ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                    <FileDown className="mr-2 h-4 w-4" />
+                )}
+                Descargar PDF
             </Button>
         </div>
-        <div className="hidden">
+        <div className="fixed -left-[9999px] top-0">
             <PrintableTicket
                 ref={componentRef}
                 sale={sale}
