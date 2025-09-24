@@ -43,7 +43,7 @@ const nextConfig: NextConfig = {
     ],
   },
   webpack: (config, { isServer }) => {
-    // This is to prevent the "Module not found: Can't resolve 'dgram'" error.
+    // This is to prevent module not found errors for server-side packages in the browser.
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
