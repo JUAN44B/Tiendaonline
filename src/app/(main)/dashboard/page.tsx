@@ -141,7 +141,7 @@ export default async function DashboardPage() {
             <CardContent className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-10 gap-4">
                 {quickAccessLinks.map(link => (
                     <Link href={link.href} key={`${link.href}-${link.label}`} className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg bg-card hover:bg-accent hover:text-accent-foreground transition-colors text-center shadow-sm border">
-                        <div className="flex items-center justify-center h-12 w-12 rounded-full bg-background">
+                        <div className="flex items-center justify-center h-12 w-12 rounded-full bg-muted">
                            <link.icon className="h-6 w-6 text-muted-foreground" />
                         </div>
                         <span className="text-xs font-medium">{link.label}</span>
