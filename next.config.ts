@@ -42,6 +42,21 @@ const nextConfig: NextConfig = {
       }
     ],
   },
+  webpack: (config, { isServer }) => {
+    // This is to prevent the "Module not found: Can't resolve 'dgram'" error.
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        dgram: false,
+        'tedious': false,
+        'pg-hstore': false,
+        'sql.js': false,
+      };
+    }
+    // This is to suppress the "Critical dependency" warning.
+    config.module.exprContextCritical = false;
+    return config;
+  },
 };
 
 export default nextConfig;
