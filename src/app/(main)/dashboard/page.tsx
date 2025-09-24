@@ -54,7 +54,7 @@ const quickAccessLinks = [
     { href: "/products", icon: Printer, label: "Imprimir" },
     { href: "/customers", icon: Mail, label: "Email" },
     { href: "/customers", icon: UserCheck, label: "Mi Perfil" },
-    { href: "/dashboard", icon: Settings, label: "Configuración" },
+    { href: "/settings", icon: Settings, label: "Configuración" },
     { href: "/dashboard", icon: ShieldCheck, label: "Seguridad" },
 ]
 

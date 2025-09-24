@@ -37,3 +37,8 @@ export type Sale = {
   total: number;
   items: SaleItem[];
 };
+
+export type CompanyData = {
+  address: string;
+  phone: string;
+};

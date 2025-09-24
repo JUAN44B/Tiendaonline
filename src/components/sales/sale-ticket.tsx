@@ -1,6 +1,6 @@
 "use client";
 
-import type { Sale, Customer } from "@/lib/definitions";
+import type { Sale, Customer, CompanyData } from "@/lib/definitions";
 import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
@@ -12,6 +12,7 @@ import Link from "next/link";
 import { CompanyLogo } from "../icons/company-logo";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
+import { getCompanyData } from "@/lib/data";
 
 interface SaleTicketProps {
   sale: Sale;
@@ -20,7 +21,7 @@ interface SaleTicketProps {
 }
 
 // Create a new component that can be referenced for printing/pdf generation
-const PrintableTicket = React.forwardRef<HTMLDivElement, SaleTicketProps>(({ sale, customer, productMap }, ref) => {
+const PrintableTicket = React.forwardRef<HTMLDivElement, SaleTicketProps & { companyData: CompanyData | null }>(({ sale, customer, productMap, companyData }, ref) => {
     const [qrCodeUrl, setQrCodeUrl] = useState('');
     const [formattedDate, setFormattedDate] = useState('');
 
@@ -58,8 +59,8 @@ const PrintableTicket = React.forwardRef<HTMLDivElement, SaleTicketProps>(({ sal
                     <div className="flex justify-center items-center gap-2 mb-2">
                         <CompanyLogo className="h-20 w-auto" />
                     </div>
-                    <p className="text-xs">123 Market St, San Francisco, CA</p>
-                    <p className="text-xs">Tel: (123) 456-7890</p>
+                    <p className="text-xs">{companyData?.address || '123 Market St, San Francisco, CA'}</p>
+                    <p className="text-xs">Tel: {companyData?.phone || '(123) 456-7890'}</p>
                 </CardHeader>
                 <CardContent className="p-4">
                     <div className="flex justify-between text-xs mb-2">
@@ -129,6 +130,16 @@ PrintableTicket.displayName = 'PrintableTicket';
 export default function SaleTicket({ sale, customer, productMap }: SaleTicketProps) {
     const componentRef = useRef<HTMLDivElement>(null);
     const [isDownloading, setIsDownloading] = useState(false);
+    const [companyData, setCompanyData] = useState<CompanyData | null>(null);
+
+    useEffect(() => {
+        async function fetchCompanyData() {
+            const data = await getCompanyData();
+            setCompanyData(data);
+        }
+        fetchCompanyData();
+    }, []);
+
 
     const handleDownloadPdf = async () => {
         const ticketElement = componentRef.current;
@@ -183,12 +194,14 @@ export default function SaleTicket({ sale, customer, productMap }: SaleTicketPro
                 sale={sale}
                 customer={customer}
                 productMap={productMap}
+                companyData={companyData}
             />
         </div>
         <PrintableTicket
             sale={sale}
             customer={customer}
             productMap={productMap}
+            companyData={companyData}
         />
     </div>
   );

@@ -1,7 +1,9 @@
-import type { Product, Category, Customer, Sale, SaleItem } from './definitions';
+import type { Product, Category, Customer, Sale, SaleItem, CompanyData } from './definitions';
 import { getConnection } from './db';
 import sql from 'mssql';
 import { placeholderProducts, placeholderCategories, placeholderCustomers, placeholderSales } from './placeholder-data';
+import fs from 'fs/promises';
+import path from 'path';
 
 // --- FLAG TO TOGGLE BETWEEN DB AND PLACEHOLDER DATA ---
 const USE_DATABASE = false; // Set to false to use placeholder data
@@ -424,4 +426,30 @@ export const getTopSellingProducts = async (limit = 5) => {
             ORDER BY quantity DESC
         `);
     return result.recordset;
+};
+
+// Company Data
+const companyDataPath = path.join(process.cwd(), 'src', 'lib', 'company-data.json');
+
+export const getCompanyData = async (): Promise<CompanyData> => {
+    try {
+        const fileContents = await fs.readFile(companyDataPath, 'utf8');
+        return JSON.parse(fileContents);
+    } catch (error) {
+        console.warn('Could not read company-data.json, returning default. Error:', error);
+        return {
+            address: '123 Default St, City, Country',
+            phone: '(000) 000-0000',
+        };
+    }
+};
+
+export const saveCompanyData = async (data: CompanyData): Promise<void> => {
+    try {
+        const jsonString = JSON.stringify(data, null, 2);
+        await fs.writeFile(companyDataPath, jsonString, 'utf8');
+    } catch (error) {
+        console.error('Failed to write to company-data.json', error);
+        throw new Error('Failed to save company data.');
+    }
 };

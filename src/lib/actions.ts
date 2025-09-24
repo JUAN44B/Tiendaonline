@@ -3,8 +3,8 @@
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { saveProduct, deleteProduct, saveCategory, deleteCategory, saveCustomer, deleteCustomer, saveSale } from './data';
-import type { Sale } from './definitions';
+import { saveProduct, deleteProduct, saveCategory, deleteCategory, saveCustomer, deleteCustomer, saveSale, saveCompanyData } from './data';
+import type { Sale, CompanyData } from './definitions';
 
 const productSchema = z.object({
     id: z.string().optional(),
@@ -102,4 +102,28 @@ export async function createSaleAction(saleData: Omit<Sale, 'id' | 'invoiceNumbe
     revalidatePath('/products');
     revalidatePath('/dashboard');
     return { success: true, sale: newSale };
+}
+
+const companyDataSchema = z.object({
+    address: z.string().min(1, "Address is required."),
+    phone: z.string().min(1, "Phone is required."),
+});
+
+export async function saveCompanyDataAction(formData: FormData) {
+    const validatedFields = companyDataSchema.safeParse(Object.fromEntries(formData.entries()));
+
+    if (!validatedFields.success) {
+        console.error(validatedFields.error);
+        return { success: false, error: "Invalid fields" };
+    }
+
+    try {
+        await saveCompanyData(validatedFields.data);
+        revalidatePath('/settings');
+        revalidatePath('/sales'); // To update tickets
+        return { success: true };
+    } catch (error) {
+        console.error('Failed to save company data:', error);
+        return { success: false, error: 'Failed to save data.' };
+    }
 }
