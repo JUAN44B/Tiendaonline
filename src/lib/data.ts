@@ -1,3 +1,4 @@
+
 import type { Product, Category, Customer, Sale, SaleItem, CompanyData } from './definitions';
 import { getConnection } from './db';
 import sql from 'mssql';
@@ -453,3 +454,5 @@ export const saveCompanyData = async (data: CompanyData): Promise<void> => {
         throw new Error('Failed to save company data.');
     }
 };
+
+    
