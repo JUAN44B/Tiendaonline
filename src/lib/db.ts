@@ -2,19 +2,26 @@
 import sql from 'mssql';
 import { config as dotenvConfig } from 'dotenv';
 
-// Force load environment variables
-dotenvConfig({ path: '.env' });
+const getConfig = (): sql.config => {
+    dotenvConfig({ path: '.env' });
+    
+    const dbServer = process.env.DB_SERVER;
 
-const config: sql.config = {
-    server: process.env.DB_SERVER!,
-    database: process.env.DB_DATABASE,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    options: {
-        encrypt: process.env.DB_ENCRYPT === 'true', 
-        trustServerCertificate: true, // Explicitly set for local dev
-        instanceName: process.env.DB_INSTANCE_NAME,
-    },
+    if (!dbServer) {
+        throw new Error('Database server is not configured. Please check your .env file for DB_SERVER.');
+    }
+
+    return {
+        server: dbServer,
+        database: process.env.DB_DATABASE,
+        user: process.env.DB_USER,
+        password: process.env.DB_PASSWORD,
+        options: {
+            encrypt: process.env.DB_ENCRYPT === 'true', 
+            trustServerCertificate: true,
+            instanceName: process.env.DB_INSTANCE_NAME,
+        },
+    };
 };
 
 let pool: sql.ConnectionPool | null = null;
@@ -24,6 +31,7 @@ export async function getConnection() {
         return pool;
     }
     try {
+        const config = getConfig();
         pool = new sql.ConnectionPool(config);
         await pool.connect();
         return pool;

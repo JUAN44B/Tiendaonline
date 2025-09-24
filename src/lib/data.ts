@@ -4,7 +4,7 @@ import sql from 'mssql';
 import { placeholderProducts, placeholderCategories, placeholderCustomers, placeholderSales } from './placeholder-data';
 
 // --- FLAG TO TOGGLE BETWEEN DB AND PLACEHOLDER DATA ---
-const USE_DATABASE = true; // Set to false to use placeholder data
+const USE_DATABASE = false; // Set to false to use placeholder data
 
 async function getRequest() {
     if (!USE_DATABASE) {
