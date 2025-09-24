@@ -4,7 +4,7 @@ import sql from 'mssql';
 import { placeholderProducts, placeholderCategories, placeholderCustomers, placeholderSales } from './placeholder-data';
 
 // --- FLAG TO TOGGLE BETWEEN DB AND PLACEHOLDER DATA ---
-const USE_DATABASE = false; // Set to false to use placeholder data
+const USE_DATABASE = true; // Set to false to use placeholder data
 
 async function getRequest() {
     if (!USE_DATABASE) {
@@ -63,6 +63,12 @@ export const fetchProductById = async (id: string): Promise<Product | undefined>
 export const saveProduct = async (product: Omit<Product, 'id'> & { id?: string }): Promise<boolean> => {
     if (!USE_DATABASE) {
         console.log("Simulating save product:", product);
+        const index = placeholderProducts.findIndex(p => p.id === product.id);
+        if (index > -1) {
+            placeholderProducts[index] = { ...placeholderProducts[index], ...product };
+        } else {
+            placeholderProducts.push({ ...product, id: `prod-${Date.now()}`});
+        }
         return true;
     }
     // DB logic remains unchanged
@@ -196,18 +202,30 @@ export const deleteCustomer = async (id: string): Promise<boolean> => {
 
 // Sales
 export const fetchSales = async (): Promise<Sale[]> => {
-    return executeQuery(
-        request => request.query(`
-            SELECT 
-                s.id, s.invoiceNumber, s.customerId, s.date, s.total,
-                (SELECT 
-                    si.productId, si.quantity, si.unitPrice, si.subtotal
-                 FROM SaleItems si WHERE si.saleId = s.id FOR JSON PATH) as items
-            FROM Sales s 
-            ORDER BY s.date DESC
-        `),
-        placeholderSales
-    );
+    const query = (request: sql.Request) => request.query(`
+        SELECT 
+            s.id, s.invoiceNumber, s.customerId, s.date, s.total,
+            (SELECT 
+                si.productId, si.quantity, si.unitPrice, si.subtotal
+             FROM SaleItems si WHERE si.saleId = s.id FOR JSON PATH) as items
+        FROM Sales s 
+        ORDER BY s.date DESC
+    `);
+
+    if (!USE_DATABASE) {
+        return placeholderSales;
+    }
+    try {
+        const request = await getRequest();
+        const result = await query(request);
+        return result.recordset.map(sale => ({
+            ...sale,
+            items: JSON.parse(sale.items || '[]')
+        }));
+    } catch (error) {
+        console.warn(`Database query failed, falling back to placeholder data. Error: ${(error as Error).message}`);
+        return placeholderSales;
+    }
 };
 
 export const fetchSaleById = async (id: string): Promise<Sale | undefined> => {
@@ -242,6 +260,7 @@ export const saveSale = async (sale: Omit<Sale, 'id' | 'invoiceNumber'>): Promis
             id: crypto.randomUUID(),
             invoiceNumber: `INV-SIM-${Math.floor(Math.random() * 1000)}`
         };
+        placeholderSales.unshift(newSale); // Add to the beginning of the array
         return newSale;
     }
     // DB logic remains unchanged
@@ -299,8 +318,12 @@ export const saveSale = async (sale: Omit<Sale, 'id' | 'invoiceNumber'>): Promis
 export const getDashboardStats = async () => {
      if (!USE_DATABASE) {
         return {
-            dailySales: 450.75,
-            monthlySales: 8950.40,
+            dailySales: placeholderSales
+                .filter(s => new Date(s.date).toDateString() === new Date().toDateString())
+                .reduce((sum, s) => sum + s.total, 0),
+            monthlySales: placeholderSales
+                .filter(s => new Date(s.date).getMonth() === new Date().getMonth())
+                .reduce((sum, s) => sum + s.total, 0),
             totalCustomers: placeholderCustomers.length,
             lowStockProducts: placeholderProducts.filter(p => p.stock < 10).length,
         };
@@ -332,9 +355,12 @@ export const getWeeklySalesData = async () => {
         for (let i = 6; i >= 0; i--) {
             const date = new Date(today);
             date.setDate(today.getDate() - i);
+            const daySales = placeholderSales
+                .filter(s => new Date(s.date).toDateString() === date.toDateString())
+                .reduce((sum, s) => sum + s.total, 0);
             salesData.push({
                 name: date.toLocaleDateString('en-US', { weekday: 'short' }),
-                total: Math.floor(Math.random() * (1000 - 200 + 1) + 200),
+                total: daySales,
             });
         }
         return salesData;
@@ -365,11 +391,24 @@ export const getWeeklySalesData = async () => {
 
 export const getTopSellingProducts = async (limit = 5) => {
     if (!USE_DATABASE) {
-        return placeholderProducts.slice(0, limit).map(p => ({
-            name: p.name,
-            imageUrl: p.imageUrl,
-            quantity: Math.floor(Math.random() * 50) + 10
-        }));
+        const productSales: { [key: string]: number } = {};
+        placeholderSales.forEach(sale => {
+            sale.items.forEach(item => {
+                productSales[item.productId] = (productSales[item.productId] || 0) + item.quantity;
+            });
+        });
+
+        return Object.entries(productSales)
+            .sort(([, qtyA], [, qtyB]) => qtyB - qtyA)
+            .slice(0, limit)
+            .map(([productId, quantity]) => {
+                const product = placeholderProducts.find(p => p.id === productId);
+                return {
+                    name: product?.name || 'Unknown',
+                    imageUrl: product?.imageUrl || '',
+                    quantity: quantity
+                };
+            });
     }
     const request = await getRequest();
     const result = await request

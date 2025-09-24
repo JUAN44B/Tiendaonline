@@ -3,65 +3,83 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
+  Settings,
+  Info,
+  Users,
+  Building,
+  Star,
+  Shield,
   LayoutDashboard,
   ShoppingCart,
-  Package,
-  Users,
   Receipt,
+  Package,
   Folder,
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
 import { CompanyLogo } from './icons/company-logo';
 
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  { href: '/pos', icon: ShoppingCart, label: 'Point of Sale' },
-  { href: '/sales', icon: Receipt, label: 'Sales' },
-  { href: '/products', icon: Package, label: 'Products' },
-  { href: '/categories', icon: Folder, label: 'Categories' },
-  { href: '/customers', icon: Users, label: 'Customers' },
+  { href: '/pos', icon: ShoppingCart, label: 'Punto de Venta' },
+  { href: '/sales', icon: Receipt, label: 'Ventas' },
+  { href: '/products', icon: Package, label: 'Productos' },
+  { href: '/categories', icon: Folder, label: 'Categorías' },
+  { href: '/customers', icon: Users, label: 'Clientes' },
 ];
+
+const secondaryNavItems = [
+    { href: '/settings', icon: Settings, label: 'Ajustes' },
+    { href: '/info', icon: Info, label: 'Información' },
+    { href: '/privileges', icon: Shield, label: 'Accesos y Privilegios' },
+    { href: '/users', icon: Users, label: 'Usuarios' },
+    { href: '/locations', icon: Building, label: 'Local/Sucursal' },
+    { href: '/rating', icon: Star, label: 'Calificación APP' },
+]
 
 export function MainSidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="flex h-screen w-20 flex-col items-center border-r bg-card">
-      <div className="flex h-20 w-full items-center justify-center border-b p-2">
-        <Link href="/dashboard">
-          <CompanyLogo className="h-full w-full" />
-          <span className="sr-only">Aliru</span>
+    <aside className="flex h-screen w-64 flex-col border-r bg-sidebar text-sidebar-foreground">
+      <div className="flex h-16 items-center justify-center p-4">
+        <Link href="/dashboard" className="flex items-center gap-2">
+          <CompanyLogo className="h-10 w-auto" />
         </Link>
       </div>
-      <nav className="flex flex-1 flex-col items-center gap-2 py-4">
-        <TooltipProvider delayDuration={0}>
-          {navItems.map((item) => (
-            <Tooltip key={item.href}>
-              <TooltipTrigger asChild>
-                <Link
-                  href={item.href}
-                  className={cn(
-                    'flex h-10 w-10 items-center justify-center rounded-lg transition-colors',
-                    pathname.startsWith(item.href)
-                      ? 'bg-primary text-primary-foreground'
-                      : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-                  )}
-                >
-                  <item.icon className="h-5 w-5" />
-                  <span className="sr-only">{item.label}</span>
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent side="right">{item.label}</TooltipContent>
-            </Tooltip>
-          ))}
-        </TooltipProvider>
+      <nav className="flex flex-1 flex-col gap-2 p-4">
+        {navItems.map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            className={cn(
+              'flex items-center gap-3 rounded-lg px-3 py-2 transition-all',
+              pathname.startsWith(item.href)
+                ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                : 'hover:bg-sidebar-accent/50'
+            )}
+          >
+            <item.icon className="h-5 w-5" />
+            <span className="font-medium">{item.label}</span>
+          </Link>
+        ))}
+        <div className="mt-auto flex flex-col gap-2">
+            {secondaryNavItems.map((item) => (
+            <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                'flex items-center gap-3 rounded-lg px-3 py-2 transition-all',
+                pathname.startsWith(item.href)
+                    ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                    : 'hover:bg-sidebar-accent/50'
+                )}
+            >
+                <item.icon className="h-5 w-5" />
+                <span className="font-medium">{item.label}</span>
+            </Link>
+            ))}
+        </div>
       </nav>
     </aside>
   );
